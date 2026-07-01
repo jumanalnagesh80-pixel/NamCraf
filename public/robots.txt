@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /auth
+
+# Sitemap
+Sitemap: https://namcraft.studio/sitemap.xml

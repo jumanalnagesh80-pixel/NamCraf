@@ -1,0 +1,243 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ *
+ * NAMCRAFT Graphic Studio — Design System
+ * Palette extracted from the studio logo: stamp blue, blossom pink,
+ * lemon yellow, warm cream (light) / deep berry (dark).
+ * All colors are exposed as semantic tokens — never hardcode hex/Tailwind
+ * color classes in components; use the tokens below.
+ * ------------------------------------------------------------------ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: oklch(0.97 0.02 85); /* warm cream page bg */
+  --foreground: oklch(0.22 0.05 260); /* deep ink text */
+
+  --primary: oklch(0.48 0.18 255); /* stamp blue */
+  --primary-foreground: oklch(0.98 0.01 85);
+
+  --secondary: oklch(0.72 0.19 5); /* blossom pink */
+  --secondary-foreground: oklch(0.22 0.05 260);
+
+  --accent: oklch(0.9 0.17 95); /* lemon yellow */
+  --accent-foreground: oklch(0.22 0.05 260);
+
+  --muted: oklch(0.93 0.03 85); /* card muted bg */
+  --muted-foreground: oklch(0.45 0.04 260);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.05 260);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.05 260);
+
+  --border: oklch(0.85 0.04 85); /* hairlines */
+  --input: oklch(0.85 0.04 85);
+  --ring: oklch(0.48 0.18 255);
+
+  --destructive: oklch(0.58 0.22 25);
+  --destructive-foreground: oklch(0.98 0.01 85);
+
+  --radius: 0.9rem;
+
+  --gradient-stamp: linear-gradient(135deg, var(--primary), var(--secondary));
+  --gradient-sunrise: linear-gradient(120deg, var(--accent), var(--secondary));
+  --shadow-stamp: 0 10px 30px -12px color-mix(in oklab, var(--primary) 40%, transparent);
+  --shadow-soft: 0 6px 20px -8px color-mix(in oklab, var(--foreground) 15%, transparent);
+}
+
+.dark {
+  --background: oklch(0.18 0.05 340); /* deep berry page bg */
+  --foreground: oklch(0.96 0.02 85); /* cream text */
+
+  --primary: oklch(0.65 0.2 255); /* brighter stamp blue */
+  --primary-foreground: oklch(0.16 0.04 340);
+
+  --secondary: oklch(0.75 0.2 5); /* blossom pink */
+  --secondary-foreground: oklch(0.16 0.04 340);
+
+  --accent: oklch(0.88 0.18 95); /* lemon yellow */
+  --accent-foreground: oklch(0.16 0.04 340);
+
+  --muted: oklch(0.26 0.05 340);
+  --muted-foreground: oklch(0.72 0.03 85);
+
+  --card: oklch(0.24 0.06 340); /* berry card */
+  --card-foreground: oklch(0.96 0.02 85);
+
+  --popover: oklch(0.24 0.06 340);
+  --popover-foreground: oklch(0.96 0.02 85);
+
+  --border: oklch(0.32 0.06 340); /* berry hairline */
+  --input: oklch(0.32 0.06 340);
+  --ring: oklch(0.65 0.2 255);
+
+  --destructive: oklch(0.62 0.2 25);
+  --destructive-foreground: oklch(0.98 0.01 85);
+}
+
+/* Map tokens into Tailwind's theme so `bg-primary`, `text-foreground`, etc. work. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --radius-sm: calc(var(--radius) - 0.4rem);
+  --radius-md: calc(var(--radius) - 0.2rem);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 0.4rem);
+
+  --font-sans: "Poppins", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", "Playfair Display", Georgia, serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--secondary) 40%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Playful postage-stamp scalloped border. Wrap any surface with this. */
+  .stamp-edge {
+    --scallop: 9px;
+    background: var(--card);
+    filter: drop-shadow(var(--shadow-soft));
+    -webkit-mask:
+      radial-gradient(var(--scallop) at var(--scallop) var(--scallop), #0000 98%, #000)
+        calc(-1 * var(--scallop)) calc(-1 * var(--scallop));
+    mask:
+      radial-gradient(var(--scallop) at var(--scallop) var(--scallop), #0000 98%, #000)
+        calc(-1 * var(--scallop)) calc(-1 * var(--scallop));
+    -webkit-mask-size: calc(2 * var(--scallop)) calc(2 * var(--scallop));
+    mask-size: calc(2 * var(--scallop)) calc(2 * var(--scallop));
+  }
+
+  /* Hand-drawn underline accent for headings. */
+  .hand-underline {
+    position: relative;
+    display: inline-block;
+  }
+  .hand-underline::after {
+    content: "";
+    position: absolute;
+    left: -2%;
+    right: -2%;
+    bottom: -0.15em;
+    height: 0.35em;
+    background: var(--accent);
+    border-radius: 60% 40% 55% 45% / 60% 55% 45% 40%;
+    opacity: 0.7;
+    z-index: -1;
+    transform: rotate(-1.2deg);
+  }
+
+  .text-gradient-stamp {
+    background: var(--gradient-stamp);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Editor form inputs */
+  .editor-input {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border);
+    background: var(--background);
+    padding: 0.6rem 0.85rem;
+    font-size: 0.875rem;
+    color: var(--foreground);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .editor-input:focus {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+  }
+  .editor-input::placeholder {
+    color: var(--muted-foreground);
+  }
+}
+
+@layer utilities {
+  .shadow-stamp {
+    box-shadow: var(--shadow-stamp);
+  }
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  .bg-gradient-stamp {
+    background-image: var(--gradient-stamp);
+  }
+  .bg-gradient-sunrise {
+    background-image: var(--gradient-sunrise);
+  }
+
+  /* Rotating stamp logo */
+  @keyframes stamp-spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .animate-stamp-spin {
+    animation: stamp-spin 22s linear infinite;
+  }
+
+  /* Scrolling marquee */
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  .animate-marquee {
+    animation: marquee 28s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-stamp-spin,
+    .animate-marquee {
+      animation: none;
+    }
+  }
+}
