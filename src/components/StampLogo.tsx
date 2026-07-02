@@ -30,13 +30,27 @@ export function StampLogo({ size = 40, spin = true, className = "" }: StampLogoP
   );
 }
 
-/** Wordmark + stamp used in the header brand link. */
-export function BrandMark({ size = 40 }: { size?: number }) {
+/** The company logo mark (scalloped stamp) as an image. */
+export function LogoMark({ size = 40, className = "" }: { size?: number; className?: string }) {
+  return (
+    <img
+      src="/logo-namcraft.svg"
+      width={size}
+      height={size}
+      alt="NAMCRAFT Graphic Studio"
+      className={`shrink-0 ${className}`}
+      style={{ width: size, height: size }}
+    />
+  );
+}
+
+/** Wordmark + logo used in the header brand link. */
+export function BrandMark({ size = 44 }: { size?: number }) {
   return (
     <span className="flex items-center gap-2.5">
-      <StampLogo size={size} />
+      <LogoMark size={size} />
       <span className="font-display text-lg leading-none font-black tracking-tight">
-        NAM<span className="text-gradient-stamp">CRAFT</span>
+        NAM<span className="text-gradient-neon">CRAFT</span>
         <span className="text-muted-foreground block text-[0.6rem] font-semibold tracking-[0.28em] uppercase">
           Graphic Studio
         </span>

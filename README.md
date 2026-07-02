@@ -101,3 +101,14 @@ export const ServerRoute = createServerFileRoute().methods({
 
 > The exact server-route API (`createServerFileRoute`) can vary between TanStack Start
 > versions — check the docs for the version pinned in `package.json` if you adopt this.
+
+
+## 🪄 Brand logo
+
+The company logo lives at [`public/logo-namcraft.svg`](./public/logo-namcraft.svg) — a scalable
+SVG recreation of the NAMCRAFT scalloped-stamp mark (blue stamp, pink `NAM CRAFT` wordmark,
+daisy accent, `GRAPHIC STUDIO` tagline). It's used in the header (`LogoMark` in
+`src/components/StampLogo.tsx`) and footer, with a matching `public/favicon.svg`.
+
+Prefer a pixel-exact raster? Drop your file at `public/logo-namcraft.png` and point `LogoMark`
+at `/logo-namcraft.png` instead.

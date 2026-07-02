@@ -1,10 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2E4BC7"/>
-      <stop offset="1" stop-color="#F26E86"/>
-    </linearGradient>
-  </defs>
-  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#g)"/>
-  <path d="M32 14l4.7 9.5 10.5 1.5-7.6 7.4 1.8 10.5L32 37.9l-9.4 4.9 1.8-10.5-7.6-7.4 10.5-1.5L32 14z" fill="#F7D94C"/>
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#4A6DB5"/>
+  <text x="32" y="30" fill="#EF9FDC" font-family="'Poppins',system-ui,sans-serif" font-weight="800"
+        font-size="22" text-anchor="middle">NC</text>
+  <!-- daisy -->
+  <g transform="translate(32 44)">
+    <g fill="#C8E64B">
+      <ellipse cx="0" cy="-7" rx="2.6" ry="6"/>
+      <ellipse cx="0" cy="-7" rx="2.6" ry="6" transform="rotate(45)"/>
+      <ellipse cx="0" cy="-7" rx="2.6" ry="6" transform="rotate(90)"/>
+      <ellipse cx="0" cy="-7" rx="2.6" ry="6" transform="rotate(135)"/>
+      <ellipse cx="0" cy="-7" rx="2.6" ry="6" transform="rotate(180)"/>
+      <ellipse cx="0" cy="-7" rx="2.6" ry="6" transform="rotate(225)"/>
+      <ellipse cx="0" cy="-7" rx="2.6" ry="6" transform="rotate(270)"/>
+      <ellipse cx="0" cy="-7" rx="2.6" ry="6" transform="rotate(315)"/>
+    </g>
+    <circle r="3.4" fill="#4A6DB5"/>
+  </g>
 </svg>

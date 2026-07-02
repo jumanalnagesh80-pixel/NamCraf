@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="NAMCRAFT Graphic Studio">
+  <title>NAMCRAFT Graphic Studio</title>
+
+  <!-- Scalloped postage-stamp body -->
+  <g fill="#4A6DB5">
+    <rect x="150" y="150" width="724" height="724" rx="8"/>
+    <circle cx="186.2" cy="150.0" r="40"/>
+    <circle cx="186.2" cy="874.0" r="40"/>
+    <circle cx="150.0" cy="186.2" r="40"/>
+    <circle cx="874.0" cy="186.2" r="40"/>
+    <circle cx="258.6" cy="150.0" r="40"/>
+    <circle cx="258.6" cy="874.0" r="40"/>
+    <circle cx="150.0" cy="258.6" r="40"/>
+    <circle cx="874.0" cy="258.6" r="40"/>
+    <circle cx="331.0" cy="150.0" r="40"/>
+    <circle cx="331.0" cy="874.0" r="40"/>
+    <circle cx="150.0" cy="331.0" r="40"/>
+    <circle cx="874.0" cy="331.0" r="40"/>
+    <circle cx="403.4" cy="150.0" r="40"/>
+    <circle cx="403.4" cy="874.0" r="40"/>
+    <circle cx="150.0" cy="403.4" r="40"/>
+    <circle cx="874.0" cy="403.4" r="40"/>
+    <circle cx="475.8" cy="150.0" r="40"/>
+    <circle cx="475.8" cy="874.0" r="40"/>
+    <circle cx="150.0" cy="475.8" r="40"/>
+    <circle cx="874.0" cy="475.8" r="40"/>
+    <circle cx="548.2" cy="150.0" r="40"/>
+    <circle cx="548.2" cy="874.0" r="40"/>
+    <circle cx="150.0" cy="548.2" r="40"/>
+    <circle cx="874.0" cy="548.2" r="40"/>
+    <circle cx="620.6" cy="150.0" r="40"/>
+    <circle cx="620.6" cy="874.0" r="40"/>
+    <circle cx="150.0" cy="620.6" r="40"/>
+    <circle cx="874.0" cy="620.6" r="40"/>
+    <circle cx="693.0" cy="150.0" r="40"/>
+    <circle cx="693.0" cy="874.0" r="40"/>
+    <circle cx="150.0" cy="693.0" r="40"/>
+    <circle cx="874.0" cy="693.0" r="40"/>
+    <circle cx="765.4" cy="150.0" r="40"/>
+    <circle cx="765.4" cy="874.0" r="40"/>
+    <circle cx="150.0" cy="765.4" r="40"/>
+    <circle cx="874.0" cy="765.4" r="40"/>
+    <circle cx="837.8" cy="150.0" r="40"/>
+    <circle cx="837.8" cy="874.0" r="40"/>
+    <circle cx="150.0" cy="837.8" r="40"/>
+    <circle cx="874.0" cy="837.8" r="40"/>
+    <circle cx="150.0" cy="150.0" r="40"/>
+    <circle cx="874.0" cy="150.0" r="40"/>
+    <circle cx="150.0" cy="874.0" r="40"/>
+    <circle cx="874.0" cy="874.0" r="40"/>
+  </g>
+
+  <!-- Wordmark: playful pink NAM / CRAFT -->
+  <g fill="#EF9FDC" font-family="'Poppins','Fraunces',system-ui,sans-serif" font-weight="800" text-anchor="middle">
+    <text x="524" y="415" font-size="185" letter-spacing="6" transform="rotate(-1.5 524 415)">NAM</text>
+    <text x="545" y="620" font-size="185" letter-spacing="4" transform="rotate(1 545 620)">CRAFT</text>
+  </g>
+
+  <!-- Daisy accent (yellow-green petals, blue center) -->
+  <g transform="translate(342 566)">
+    <g fill="#C8E64B">
+      <g><ellipse cx="0" cy="-30" rx="11" ry="26"/></g>
+      <g transform="rotate(45)"><ellipse cx="0" cy="-30" rx="11" ry="26"/></g>
+      <g transform="rotate(90)"><ellipse cx="0" cy="-30" rx="11" ry="26"/></g>
+      <g transform="rotate(135)"><ellipse cx="0" cy="-30" rx="11" ry="26"/></g>
+      <g transform="rotate(180)"><ellipse cx="0" cy="-30" rx="11" ry="26"/></g>
+      <g transform="rotate(225)"><ellipse cx="0" cy="-30" rx="11" ry="26"/></g>
+      <g transform="rotate(270)"><ellipse cx="0" cy="-30" rx="11" ry="26"/></g>
+      <g transform="rotate(315)"><ellipse cx="0" cy="-30" rx="11" ry="26"/></g>
+    </g>
+    <circle cx="0" cy="0" r="15" fill="#4A6DB5"/>
+  </g>
+
+  <!-- Tagline -->
+  <text x="512" y="800" fill="#E8EEFF" font-family="'Poppins',system-ui,sans-serif" font-weight="500"
+        font-size="58" letter-spacing="14" text-anchor="middle">GRAPHIC STUDIO</text>
+</svg>
