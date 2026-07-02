@@ -23,8 +23,8 @@ export function PricingSection() {
             className={cn(
               "relative flex flex-col rounded-3xl border p-7 transition",
               tier.featured
-                ? "border-primary bg-card shadow-stamp scale-[1.02]"
-                : "border-border bg-card shadow-soft",
+                ? "border-primary glass glow scale-[1.03]"
+                : "border-border glass shadow-soft",
             )}
           >
             {tier.featured && (

@@ -5,7 +5,7 @@ import { StampLogo } from "~/components/StampLogo";
 export function CtaSection() {
   return (
     <section className="px-4 py-16 sm:px-6">
-      <div className="bg-gradient-stamp shadow-stamp relative mx-auto flex max-w-6xl flex-col items-center overflow-hidden rounded-[2rem] px-6 py-16 text-center text-primary-foreground">
+      <div className="bg-gradient-neon glow animate-gradient-move relative mx-auto flex max-w-6xl flex-col items-center overflow-hidden rounded-[2rem] px-6 py-16 text-center text-primary-foreground">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 opacity-20"
