@@ -75,6 +75,65 @@ function EditorPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [stickerSet, setStickerSet] = useState(STICKER_SETS[0].id);
 
+  // ---- Undo / redo history ----
+  const pastRef = useRef<DesignState[]>([]);
+  const futureRef = useRef<DesignState[]>([]);
+  const baselineRef = useRef<DesignState>(design);
+  const skipHistoryRef = useRef(false);
+  const [, bumpHistory] = useState(0);
+  const canUndo = pastRef.current.length > 0;
+  const canRedo = futureRef.current.length > 0;
+
+  // Debounced commit: a burst of edits (e.g. a drag) becomes one undo step.
+  useEffect(() => {
+    if (skipHistoryRef.current) {
+      skipHistoryRef.current = false;
+      baselineRef.current = design;
+      return;
+    }
+    const id = setTimeout(() => {
+      if (baselineRef.current !== design) {
+        pastRef.current.push(baselineRef.current);
+        if (pastRef.current.length > 60) pastRef.current.shift();
+        futureRef.current = [];
+        baselineRef.current = design;
+        bumpHistory((n) => n + 1);
+      }
+    }, 400);
+    return () => clearTimeout(id);
+  }, [design]);
+
+  function undo() {
+    if (!pastRef.current.length) return;
+    futureRef.current.push(design);
+    const prev = pastRef.current.pop() as DesignState;
+    baselineRef.current = prev;
+    skipHistoryRef.current = true;
+    setSelectedId(null);
+    setDesign(prev);
+    bumpHistory((n) => n + 1);
+  }
+
+  function redo() {
+    if (!futureRef.current.length) return;
+    pastRef.current.push(design);
+    const next = futureRef.current.pop() as DesignState;
+    baselineRef.current = next;
+    skipHistoryRef.current = true;
+    setSelectedId(null);
+    setDesign(next);
+    bumpHistory((n) => n + 1);
+  }
+
+  function resetHistory(next: DesignState) {
+    pastRef.current = [];
+    futureRef.current = [];
+    baselineRef.current = next;
+    skipHistoryRef.current = true;
+    setDesign(next);
+    bumpHistory((n) => n + 1);
+  }
+
   const baseHeight = Math.round(BASE_WIDTH / ratioToNumber(template.ratio));
   const selectedEl = design.elements.find((e) => e.id === selectedId) ?? null;
 
@@ -154,6 +213,15 @@ function EditorPage() {
     });
   }
 
+  function duplicateSelected() {
+    if (!selectedId) return;
+    const el = design.elements.find((e) => e.id === selectedId);
+    if (!el) return;
+    const id = uid();
+    setElements((els) => [...els, { ...el, id, x: el.x + 40, y: el.y + 40 }]);
+    setSelectedId(id);
+  }
+
   // Keyboard shortcuts for the selected element: Esc = deselect,
   // Delete/Backspace = remove, arrows = nudge (Shift = larger step).
   useEffect(() => {
@@ -165,7 +233,27 @@ function EditorPage() {
           t.tagName === "TEXTAREA" ||
           t.tagName === "SELECT" ||
           t.isContentEditable);
-      if (typing || !selectedId) return;
+      if (typing) return;
+
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        redo();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "d") {
+        e.preventDefault();
+        duplicateSelected();
+        return;
+      }
+
+      if (!selectedId) return;
 
       if (e.key === "Escape") return setSelectedId(null);
       if (e.key === "Delete" || e.key === "Backspace") {
@@ -192,7 +280,7 @@ function EditorPage() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, design.elements]);
+  }, [design, selectedId]);
 
   // Restore a previously saved design (cloud when signed in, else local).
   useEffect(() => {
@@ -201,12 +289,13 @@ function EditorPage() {
       let saved: DesignState | null = null;
       if (user) saved = await loadCloudDesign(user.id, template.id);
       if (!saved) saved = loadLocalDesign(template.id);
-      if (saved && active) setDesign(saved);
+      if (saved && active) resetHistory(saved);
     }
     void restore();
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, template.id]);
 
   const update = <K extends keyof DesignState>(key: K, value: DesignState[K]) =>
@@ -340,6 +429,28 @@ function EditorPage() {
             <h1 className="font-display mt-1 text-3xl font-black">{template.title}</h1>
           </div>
           <div className="flex items-center gap-2">
+            <div className="glass mr-1 flex items-center gap-1 rounded-full p-1">
+              <button
+                type="button"
+                onClick={undo}
+                disabled={!canUndo}
+                aria-label="Undo"
+                title="Undo (Ctrl/Cmd+Z)"
+                className="hover:bg-muted flex h-8 w-8 items-center justify-center rounded-full text-lg transition disabled:opacity-40"
+              >
+                ↶
+              </button>
+              <button
+                type="button"
+                onClick={redo}
+                disabled={!canRedo}
+                aria-label="Redo"
+                title="Redo (Ctrl/Cmd+Shift+Z)"
+                className="hover:bg-muted flex h-8 w-8 items-center justify-center rounded-full text-lg transition disabled:opacity-40"
+              >
+                ↷
+              </button>
+            </div>
             <FavoriteButton templateId={template.id} size={22} />
             <Button variant="outline" size="sm" onClick={handleShare}>
               Share
@@ -677,6 +788,9 @@ function EditorPage() {
                 </label>
 
                 <div className="flex flex-wrap gap-2 pt-1">
+                  <Button size="sm" variant="outline" onClick={duplicateSelected}>
+                    ⧉ Duplicate
+                  </Button>
                   <Button size="sm" variant="outline" onClick={() => reorderSelected("front")}>
                     ⬆ Front
                   </Button>
@@ -690,6 +804,52 @@ function EditorPage() {
                 <p className="text-muted-foreground pt-1 text-xs">
                   Shortcuts: drag to move · arrow keys to nudge · Delete to remove · Esc to deselect.
                 </p>
+              </Panel>
+            )}
+
+            {design.elements.length > 0 && (
+              <Panel title={`Layers · ${design.elements.length}`}>
+                <div className="space-y-1.5">
+                  {[...design.elements].reverse().map((el) => (
+                    <div
+                      key={el.id}
+                      className={cn(
+                        "flex items-center gap-2 rounded-xl border px-2.5 py-2 text-sm transition",
+                        selectedId === el.id
+                          ? "border-primary bg-muted"
+                          : "border-border hover:bg-muted",
+                      )}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setSelectedId(el.id)}
+                        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                      >
+                        <span className="text-base" aria-hidden="true">
+                          {el.kind === "sticker" ? el.emoji : el.kind === "text" ? "🅣" : "◆"}
+                        </span>
+                        <span className="truncate">
+                          {el.kind === "text"
+                            ? el.text || "Text"
+                            : el.kind === "sticker"
+                              ? "Sticker"
+                              : (el.shape ?? "Shape")}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setElements((els) => els.filter((x) => x.id !== el.id));
+                          if (selectedId === el.id) setSelectedId(null);
+                        }}
+                        aria-label="Delete layer"
+                        className="text-muted-foreground hover:text-destructive px-1"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </Panel>
             )}
 
