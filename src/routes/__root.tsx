@@ -53,7 +53,9 @@ export const Route = createRootRoute({
           rel: "stylesheet",
           href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@500;700;900&display=swap",
         },
-        ...base.links,
+        // NOTE: canonical is intentionally omitted here. Each leaf route emits
+        // its own self-referencing canonical via seo(), and TanStack does not
+        // dedupe <link> tags — so emitting one here too would produce duplicates.
       ],
     };
   },
