@@ -3,7 +3,8 @@ import { routeTree } from "./routeTree.gen";
 import { NotFound } from "~/components/NotFound";
 import { DefaultCatchBoundary } from "~/components/DefaultCatchBoundary";
 
-export function createRouter() {
+// Newer TanStack Start expects the router entry to export `getRouter`.
+export function getRouter() {
   const router = createTanStackRouter({
     routeTree,
     scrollRestoration: true,
@@ -15,8 +16,11 @@ export function createRouter() {
   return router;
 }
 
+// Backwards-compatible alias in case anything imports the old name.
+export const createRouter = getRouter;
+
 declare module "@tanstack/react-router" {
   interface Register {
-    router: ReturnType<typeof createRouter>;
+    router: ReturnType<typeof getRouter>;
   }
 }
