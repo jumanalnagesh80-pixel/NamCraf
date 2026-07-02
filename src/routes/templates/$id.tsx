@@ -14,6 +14,7 @@ import { SHAPES, STICKER_SETS, type ShapeType } from "~/lib/graphics";
 import { categoryLabel, getTemplate, ratioToNumber } from "~/lib/templates";
 import {
   defaultDesign,
+  defaultBgFilters,
   loadLocalDesign,
   saveLocalDesign,
   loadCloudDesign,
@@ -226,6 +227,21 @@ function EditorPage() {
     setElements((els) => [...els, { ...el, id, x: el.x + 40, y: el.y + 40 }]);
     setSelectedId(id);
   }
+
+  function alignSelected(axis: "h" | "v") {
+    if (!selectedEl) return;
+    const w = selectedEl.kind === "text" ? selectedEl.size * 3 : selectedEl.size;
+    const h = selectedEl.kind === "text" ? selectedEl.size * 1.2 : selectedEl.size;
+    if (axis === "h") onElementChange(selectedEl.id, { x: BASE_WIDTH / 2 - w / 2 });
+    else onElementChange(selectedEl.id, { y: baseHeight / 2 - h / 2 });
+  }
+
+  const bgFilters = design.bgFilters ?? defaultBgFilters();
+  const setBgFilter = (key: keyof typeof bgFilters, value: number) =>
+    setDesign((d) => ({
+      ...d,
+      bgFilters: { ...(d.bgFilters ?? defaultBgFilters()), [key]: value },
+    }));
 
   // Keyboard shortcuts for the selected element: Esc = deselect,
   // Delete/Backspace = remove, arrows = nudge (Shift = larger step).
@@ -760,6 +776,58 @@ function EditorPage() {
                         ))}
                       </select>
                     </Field>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onElementChange(selectedEl.id, { bold: !selectedEl.bold })}
+                        className={cn(
+                          "rounded-lg border px-3 py-1.5 text-sm font-black",
+                          selectedEl.bold ? "border-primary bg-muted" : "border-border",
+                        )}
+                        aria-pressed={Boolean(selectedEl.bold)}
+                      >
+                        B
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onElementChange(selectedEl.id, { italic: !selectedEl.italic })}
+                        className={cn(
+                          "rounded-lg border px-3 py-1.5 text-sm italic",
+                          selectedEl.italic ? "border-primary bg-muted" : "border-border",
+                        )}
+                        aria-pressed={Boolean(selectedEl.italic)}
+                      >
+                        I
+                      </button>
+                      {(["left", "center", "right"] as const).map((a) => (
+                        <button
+                          key={a}
+                          type="button"
+                          onClick={() => onElementChange(selectedEl.id, { align: a })}
+                          className={cn(
+                            "rounded-lg border px-2.5 py-1.5 text-xs",
+                            (selectedEl.align ?? "center") === a
+                              ? "border-primary bg-muted"
+                              : "border-border",
+                          )}
+                          aria-label={`Align ${a}`}
+                        >
+                          {a === "left" ? "⬅" : a === "center" ? "↔" : "➡"}
+                        </button>
+                      ))}
+                    </div>
+                    <Field label={`Letter spacing — ${selectedEl.letterSpacing ?? 0}px`}>
+                      <input
+                        type="range"
+                        min={-5}
+                        max={30}
+                        value={selectedEl.letterSpacing ?? 0}
+                        onChange={(e) =>
+                          onElementChange(selectedEl.id, { letterSpacing: Number(e.target.value) })
+                        }
+                        className="accent-primary w-full"
+                      />
+                    </Field>
                   </>
                 )}
 
@@ -850,6 +918,12 @@ function EditorPage() {
                 </label>
 
                 <div className="flex flex-wrap gap-2 pt-1">
+                  <Button size="sm" variant="outline" onClick={() => alignSelected("h")}>
+                    ↔ Center
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => alignSelected("v")}>
+                    ↕ Center
+                  </Button>
                   <Button size="sm" variant="outline" onClick={duplicateSelected}>
                     ⧉ Duplicate
                   </Button>
@@ -922,13 +996,57 @@ function EditorPage() {
                 <input type="file" accept="image/*" onChange={onUploadImage} className="hidden" />
               </label>
               {design.backgroundImage && (
-                <button
-                  type="button"
-                  onClick={() => update("backgroundImage", null)}
-                  className="text-destructive mt-2 text-sm font-semibold hover:underline"
-                >
-                  Remove image
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => update("backgroundImage", null)}
+                    className="text-destructive mt-2 text-sm font-semibold hover:underline"
+                  >
+                    Remove image
+                  </button>
+
+                  <div className="mt-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Adjust
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDesign((d) => ({ ...d, bgFilters: defaultBgFilters() }))
+                        }
+                        className="text-primary text-xs font-semibold hover:underline"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                    <Field label={`Brightness — ${bgFilters.brightness}%`}>
+                      <input type="range" min={0} max={200} value={bgFilters.brightness}
+                        onChange={(e) => setBgFilter("brightness", Number(e.target.value))}
+                        className="accent-primary w-full" />
+                    </Field>
+                    <Field label={`Contrast — ${bgFilters.contrast}%`}>
+                      <input type="range" min={0} max={200} value={bgFilters.contrast}
+                        onChange={(e) => setBgFilter("contrast", Number(e.target.value))}
+                        className="accent-primary w-full" />
+                    </Field>
+                    <Field label={`Saturation — ${bgFilters.saturate}%`}>
+                      <input type="range" min={0} max={200} value={bgFilters.saturate}
+                        onChange={(e) => setBgFilter("saturate", Number(e.target.value))}
+                        className="accent-primary w-full" />
+                    </Field>
+                    <Field label={`Blur — ${bgFilters.blur}px`}>
+                      <input type="range" min={0} max={20} value={bgFilters.blur}
+                        onChange={(e) => setBgFilter("blur", Number(e.target.value))}
+                        className="accent-primary w-full" />
+                    </Field>
+                    <Field label={`Grayscale — ${bgFilters.grayscale}%`}>
+                      <input type="range" min={0} max={100} value={bgFilters.grayscale}
+                        onChange={(e) => setBgFilter("grayscale", Number(e.target.value))}
+                        className="accent-primary w-full" />
+                    </Field>
+                  </div>
+                </>
               )}
             </Panel>
           </aside>

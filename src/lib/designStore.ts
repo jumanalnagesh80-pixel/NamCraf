@@ -28,6 +28,29 @@ export interface DesignElement {
   opacity?: number;
   /** mirror horizontally */
   flipH?: boolean;
+  /** text formatting */
+  bold?: boolean;
+  italic?: boolean;
+  align?: "left" | "center" | "right";
+  letterSpacing?: number;
+}
+
+/** CSS-filter adjustments applied to an uploaded background image. */
+export interface BgFilters {
+  brightness: number; // %
+  contrast: number; // %
+  saturate: number; // %
+  blur: number; // px
+  grayscale: number; // %
+}
+
+export function defaultBgFilters(): BgFilters {
+  return { brightness: 100, contrast: 100, saturate: 100, blur: 0, grayscale: 0 };
+}
+
+export function bgFilterCss(f: BgFilters | undefined): string {
+  const x = f ?? defaultBgFilters();
+  return `brightness(${x.brightness}%) contrast(${x.contrast}%) saturate(${x.saturate}%) blur(${x.blur}px) grayscale(${x.grayscale}%)`;
 }
 
 export interface DesignState {
@@ -39,6 +62,7 @@ export interface DesignState {
   headlineSize: number; // px at the design's base resolution
   backgroundImage: string | null; // data URL or remote URL
   elements: DesignElement[];
+  bgFilters?: BgFilters;
 }
 
 export function defaultDesign(overrides: Partial<DesignState> = {}): DesignState {
@@ -51,14 +75,20 @@ export function defaultDesign(overrides: Partial<DesignState> = {}): DesignState
     headlineSize: 64,
     backgroundImage: null,
     elements: [],
+    bgFilters: defaultBgFilters(),
     ...overrides,
   };
 }
 
-/** Normalize a loaded design so older saves (without `elements`) stay valid. */
+/** Normalize a loaded design so older saves (without newer fields) stay valid. */
 function normalize(design: Partial<DesignState> | null): DesignState | null {
   if (!design) return null;
-  return { ...defaultDesign(), ...design, elements: design.elements ?? [] };
+  return {
+    ...defaultDesign(),
+    ...design,
+    elements: design.elements ?? [],
+    bgFilters: { ...defaultBgFilters(), ...(design.bgFilters ?? {}) },
+  };
 }
 
 const LS_PREFIX = "namcraft:design:";
@@ -119,6 +149,7 @@ function rowToDesign(row: TemplateDesignRow): DesignState {
     headlineSize: row.headline_size,
     backgroundImage: row.background_image,
     elements: (row.elements as DesignElement[] | null) ?? [],
+    bgFilters: { ...defaultBgFilters(), ...((row.bg_filters as Partial<BgFilters> | null) ?? {}) },
   };
 }
 
@@ -157,6 +188,7 @@ export async function saveCloudDesign(
       headline_size: design.headlineSize,
       background_image: design.backgroundImage,
       elements: design.elements,
+      bg_filters: design.bgFilters ?? defaultBgFilters(),
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id,template_id" },

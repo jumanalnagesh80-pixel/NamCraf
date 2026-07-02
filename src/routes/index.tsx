@@ -4,6 +4,7 @@ import { SiteLayout } from "~/components/SiteLayout";
 import { Marquee } from "~/components/Marquee";
 import { Hero } from "~/components/home/Hero";
 import { StatsBand } from "~/components/home/StatsBand";
+import { StartFromScratch } from "~/components/home/StartFromScratch";
 import { BrandsMarquee } from "~/components/home/BrandsMarquee";
 import { CategoryChips } from "~/components/home/CategoryChips";
 import { WhatYouCanCreate } from "~/components/home/WhatYouCanCreate";
@@ -35,6 +36,7 @@ function Home() {
     <SiteLayout>
       <Hero />
       <StatsBand />
+      <StartFromScratch />
       <BrandsMarquee />
       <CategoryChips />
       <WhatYouCanCreate />

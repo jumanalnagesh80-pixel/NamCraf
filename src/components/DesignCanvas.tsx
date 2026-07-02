@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
 import type { DesignState, DesignElement } from "~/lib/designStore";
+import { bgFilterCss } from "~/lib/designStore";
 import { getPalette } from "~/lib/palettes";
 import { getFont } from "~/lib/fonts";
 import { ratioToNumber, type AspectRatio } from "~/lib/templates";
@@ -168,6 +169,7 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
                     width: "100%",
                     height: "100%",
                     objectFit: "cover",
+                    filter: bgFilterCss(design.bgFilters),
                   }}
                 />
                 <div
@@ -306,11 +308,13 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
                         style={{
                           fontSize: el.size,
                           lineHeight: 1.1,
-                          fontWeight: 800,
+                          fontWeight: el.bold ? 900 : 600,
+                          fontStyle: el.italic ? "italic" : "normal",
                           color: el.color,
                           fontFamily: getFont(el.fontId ?? design.fontId).stack,
                           whiteSpace: "pre-wrap",
-                          textAlign: "center",
+                          textAlign: el.align ?? "center",
+                          letterSpacing: el.letterSpacing ?? 0,
                         }}
                       >
                         {el.text || "Text"}

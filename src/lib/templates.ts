@@ -319,11 +319,53 @@ export const ALL_TEMPLATES: Template[] = [...CURATED_TEMPLATES, ...GENERATED_TEM
 
 const GEN_ID_RE = /^gen-(\d+)$/;
 
+export interface BlankPreset {
+  id: string;
+  label: string;
+  icon: string;
+  ratio: AspectRatio;
+  category: string;
+  dims: string;
+}
+
+/** Start-from-scratch presets ("new document" flow). */
+export const BLANK_PRESETS: BlankPreset[] = [
+  { id: "blank-ig-post", label: "Instagram Post", icon: "📸", ratio: "1:1", category: "instagram", dims: "1080 × 1080" },
+  { id: "blank-story", label: "Story", icon: "📱", ratio: "3:4", category: "social", dims: "1080 × 1440" },
+  { id: "blank-presentation", label: "Presentation", icon: "📊", ratio: "16:9", category: "presentations", dims: "1920 × 1080" },
+  { id: "blank-poster", label: "Poster", icon: "🖼️", ratio: "3:4", category: "posters", dims: "1080 × 1440" },
+  { id: "blank-doc", label: "Document (A4)", icon: "📄", ratio: "3:4", category: "docs", dims: "A4" },
+  { id: "blank-thumbnail", label: "YouTube Thumbnail", icon: "🎬", ratio: "16:9", category: "videos", dims: "1280 × 720" },
+  { id: "blank-logo", label: "Logo", icon: "✳️", ratio: "1:1", category: "logos", dims: "1080 × 1080" },
+  { id: "blank-banner", label: "Banner / Ad", icon: "📣", ratio: "16:9", category: "marketing", dims: "1920 × 1080" },
+];
+
+function blankTemplate(preset: BlankPreset): Template {
+  return {
+    id: preset.id,
+    title: `Blank ${preset.label}`,
+    category: preset.category,
+    ratio: preset.ratio,
+    headline: "",
+    tagline: "",
+    paletteId: "cream",
+    fontId: "poppins",
+    darkText: true,
+    popularity: 0,
+    createdAt: "2026-06-01",
+    tags: ["blank", "custom"],
+  };
+}
+
 export function getTemplate(id: string): Template | undefined {
   const curated = TEMPLATES.find((t) => t.id === id);
   if (curated) return curated;
   const m = GEN_ID_RE.exec(id);
   if (m) return generateTemplate(Number(m[1]));
+  if (id.startsWith("blank-")) {
+    const preset = BLANK_PRESETS.find((p) => p.id === id);
+    return blankTemplate(preset ?? BLANK_PRESETS[0]);
+  }
   return undefined;
 }
 
