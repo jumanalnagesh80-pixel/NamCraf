@@ -76,6 +76,7 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
       if (!editable) return;
       e.stopPropagation();
       onSelectElement?.(el.id);
+      if (el.locked) return; // selectable but not draggable
       const startX = e.clientX;
       const startY = e.clientY;
       const origX = el.x;
@@ -275,6 +276,7 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
               }}
             >
               {elements.map((el) => {
+                if (el.hidden) return null;
                 const selected = editable && selectedId === el.id;
                 const isText = el.kind === "text";
                 const flip = el.flipH ? -1 : 1;
@@ -322,7 +324,7 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
                     ) : (
                       <span style={{ fontSize: el.size, lineHeight: 1 }}>{el.emoji}</span>
                     )}
-                    {selected && el.kind !== "text" && el.rotation === 0 && (
+                    {selected && el.kind !== "text" && el.rotation === 0 && !el.locked && (
                       <div
                         onPointerDown={(e) => startResize(e, el)}
                         title="Drag to resize"

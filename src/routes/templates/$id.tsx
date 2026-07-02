@@ -229,6 +229,21 @@ function EditorPage() {
     setSelectedId(id);
   }
 
+  const clipboardRef = useRef<DesignElement | null>(null);
+  function copySelected() {
+    if (selectedEl) clipboardRef.current = { ...selectedEl };
+  }
+  function pasteClipboard() {
+    const c = clipboardRef.current;
+    if (!c) return;
+    const id = uid();
+    setElements((els) => [...els, { ...c, id, x: c.x + 40, y: c.y + 40, locked: false, hidden: false }]);
+    setSelectedId(id);
+  }
+  function toggleLayer(id: string, key: "locked" | "hidden") {
+    setElements((els) => els.map((e) => (e.id === id ? { ...e, [key]: !e[key] } : e)));
+  }
+
   function alignSelected(axis: "h" | "v") {
     if (!selectedEl) return;
     const w = selectedEl.kind === "text" ? selectedEl.size * 3 : selectedEl.size;
@@ -272,6 +287,20 @@ function EditorPage() {
       if (mod && e.key.toLowerCase() === "d") {
         e.preventDefault();
         duplicateSelected();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "c") {
+        if (selectedId) {
+          e.preventDefault();
+          copySelected();
+        }
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "v") {
+        if (clipboardRef.current) {
+          e.preventDefault();
+          pasteClipboard();
+        }
         return;
       }
 
@@ -939,7 +968,8 @@ function EditorPage() {
                   </Button>
                 </div>
                 <p className="text-muted-foreground pt-1 text-xs">
-                  Shortcuts: drag to move · arrow keys to nudge · Delete to remove · Esc to deselect.
+                  Drag to move · arrows nudge · ⌘/Ctrl+C/V copy-paste · ⌘/Ctrl+D duplicate ·
+                  Delete removes · Esc deselects.
                 </p>
               </Panel>
             )}
@@ -965,13 +995,31 @@ function EditorPage() {
                         <span className="text-base" aria-hidden="true">
                           {el.kind === "sticker" ? el.emoji : el.kind === "text" ? "🅣" : "◆"}
                         </span>
-                        <span className="truncate">
+                        <span className={cn("truncate", el.hidden && "opacity-50 line-through")}>
                           {el.kind === "text"
                             ? el.text || "Text"
                             : el.kind === "sticker"
                               ? "Sticker"
                               : (el.shape ?? "Shape")}
                         </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleLayer(el.id, "hidden")}
+                        aria-label={el.hidden ? "Show layer" : "Hide layer"}
+                        title={el.hidden ? "Show" : "Hide"}
+                        className="text-muted-foreground hover:text-foreground px-1"
+                      >
+                        {el.hidden ? "🙈" : "👁"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleLayer(el.id, "locked")}
+                        aria-label={el.locked ? "Unlock layer" : "Lock layer"}
+                        title={el.locked ? "Unlock" : "Lock"}
+                        className="text-muted-foreground hover:text-foreground px-1"
+                      >
+                        {el.locked ? "🔒" : "🔓"}
                       </button>
                       <button
                         type="button"

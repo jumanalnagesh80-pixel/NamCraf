@@ -33,6 +33,9 @@ export interface DesignElement {
   italic?: boolean;
   align?: "left" | "center" | "right";
   letterSpacing?: number;
+  /** layer state */
+  locked?: boolean;
+  hidden?: boolean;
 }
 
 /** CSS-filter adjustments applied to an uploaded background image. */
