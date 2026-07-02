@@ -1,4 +1,5 @@
 const DEFAULT_ITEMS = [
+  "3M+ Templates",
   "Logos",
   "Posters",
   "Social Posts",
@@ -11,6 +12,7 @@ const DEFAULT_ITEMS = [
   "Menus",
   "Invitations",
   "Banners",
+  "AI Tools",
 ];
 
 /** Full-width scrolling marquee of studio capabilities. */

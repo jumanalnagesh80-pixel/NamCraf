@@ -1,17 +1,21 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { seo } from "~/lib/seo";
 import { SiteLayout } from "~/components/SiteLayout";
 import { TemplateCard } from "~/components/TemplateCard";
 import { Button } from "~/components/ui/Button";
 import {
+  ALL_TEMPLATES,
   CATEGORIES,
   RATIOS,
-  TEMPLATES,
+  TOTAL_TEMPLATE_COUNT,
   categoryLabel,
+  formatCount,
   type AspectRatio,
 } from "~/lib/templates";
 import { cn } from "~/lib/utils";
+
+const PAGE_SIZE = 24;
 
 type SortKey = "newest" | "popular" | "az";
 
@@ -46,7 +50,7 @@ export const Route = createFileRoute("/templates/")({
       path: "/templates",
       title: "Templates",
       description:
-        "Browse 40+ studio-crafted templates across logos, posters, social posts, presentations and more. Filter by category, aspect ratio and sort — then remix in the editor.",
+        "Browse 3M+ studio-crafted templates across logos, posters, social posts, presentations and more. Filter by category, aspect ratio and sort — then remix any of them in the live editor.",
     }),
   }),
   component: TemplatesLibrary,
@@ -72,7 +76,7 @@ function TemplatesLibrary() {
   const sort: SortKey = search.sort ?? "popular";
 
   const results = useMemo(() => {
-    let list = [...TEMPLATES];
+    let list = [...ALL_TEMPLATES];
 
     if (search.category) list = list.filter((t) => t.category === search.category);
     if (search.ratio) list = list.filter((t) => t.ratio === search.ratio);
@@ -103,15 +107,29 @@ function TemplatesLibrary() {
 
   const hasFilters = Boolean(search.q || search.category || search.ratio);
 
+  // Pagination — the catalog is huge, so reveal results in pages.
+  const [visible, setVisible] = useState(PAGE_SIZE);
+  const filterKey = `${search.category ?? ""}|${search.ratio ?? ""}|${search.q ?? ""}|${sort}`;
+  useEffect(() => {
+    setVisible(PAGE_SIZE);
+  }, [filterKey]);
+  const shown = results.slice(0, visible);
+  const remaining = results.length - shown.length;
+
   return (
     <SiteLayout>
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <header className="mb-8">
-          <h1 className="font-display text-4xl font-black sm:text-5xl">Template library</h1>
+          <span className="text-gradient-neon text-sm font-bold tracking-wide uppercase">
+            {formatCount(TOTAL_TEMPLATE_COUNT)} templates
+          </span>
+          <h1 className="font-display mt-1 text-4xl font-black sm:text-5xl">Template library</h1>
           <p className="text-muted-foreground mt-2">
-            {results.length} {results.length === 1 ? "template" : "templates"}
-            {search.category ? ` in ${categoryLabel(search.category)}` : ""}
-            {search.q ? ` for “${search.q}”` : ""}.
+            {results.length.toLocaleString()} matching
+            {search.category ? ` ${categoryLabel(search.category)}` : ""} template
+            {results.length === 1 ? "" : "s"}
+            {search.q ? ` for “${search.q}”` : ""} — from a catalog of{" "}
+            {formatCount(TOTAL_TEMPLATE_COUNT)}.
           </p>
         </header>
 
@@ -216,13 +234,30 @@ function TemplatesLibrary() {
 
         {/* Results */}
         {results.length > 0 ? (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {results.map((template) => (
-              <TemplateCard key={template.id} template={template} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {shown.map((template) => (
+                <TemplateCard key={template.id} template={template} />
+              ))}
+            </div>
+
+            {remaining > 0 && (
+              <div className="mt-10 flex flex-col items-center gap-3">
+                <p className="text-muted-foreground text-sm">
+                  Showing {shown.length.toLocaleString()} of {results.length.toLocaleString()}
+                </p>
+                <Button
+                  size="lg"
+                  className="bg-gradient-neon glow animate-gradient-move"
+                  onClick={() => setVisible((v) => v + PAGE_SIZE)}
+                >
+                  Load more templates
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
-          <div className="border-border bg-card flex flex-col items-center rounded-3xl border py-20 text-center">
+          <div className="glass flex flex-col items-center rounded-3xl py-20 text-center">
             <span className="text-5xl" aria-hidden="true">
               🔍
             </span>

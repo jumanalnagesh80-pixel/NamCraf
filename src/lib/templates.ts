@@ -118,8 +118,159 @@ export const TEMPLATES: Template[] = [
   { id: "pres-agenda", title: "Agenda Slide", category: "presentations", ratio: "16:9", headline: "Today's Agenda", tagline: "3 things to cover", paletteId: "mint", fontId: "poppins", darkText: false, popularity: 57, createdAt: "2026-02-28", tags: ["agenda"] },
 ];
 
+/** Curated, hand-crafted templates (used for the "featured" / spark grids). */
+export const CURATED_TEMPLATES = TEMPLATES;
+
+// ============================================================================
+// Procedural catalog — a 3,000,000+ (30 lakh+) template universe.
+//
+// We can't materialize three million objects, so templates are *generated
+// deterministically from an integer index*. Any id `gen-<n>` reconstructs the
+// exact same template every time, so links, the editor, favorites and saved
+// designs all work across the entire virtual catalog. The library materializes
+// a large browsable pool and paginates through it.
+// ============================================================================
+
+/** Marketing / catalog size claim shown across the UI. */
+export const TOTAL_TEMPLATE_COUNT = 3_000_000;
+
+/** How many procedural templates to keep in memory for browsing/filtering. */
+export const GEN_POOL_SIZE = 2400;
+
+const PALETTE_IDS = ["stamp", "sunrise", "cream", "berry", "blossom", "lemon", "ink", "mint"];
+const FONT_IDS = ["fraunces", "poppins", "playfair", "georgia", "mono", "system"];
+const ALL_RATIOS: AspectRatio[] = ["1:1", "3:4", "4:5", "16:9"];
+const CATEGORY_IDS = CATEGORIES.map((c) => c.id);
+
+const BRAND_WORDS = [
+  "Nova", "Vertex", "Lumen", "Bloom", "Orbit", "Pulse", "Vela", "Zephyr", "Aster", "Quill",
+  "Ember", "Halo", "Onyx", "Sage", "Coral", "Flux", "Prism", "Nimbus", "Cobalt", "Wren",
+  "Solace", "Atlas", "Echo", "Indigo", "Juno", "Kepler", "Lyra", "Muse", "Nordic", "Opal",
+];
+const BRAND_SUFFIX = ["Studio", "Labs", "Co.", "Atelier", "Collective", "Works", "Agency", "Group", "& Co.", "Design"];
+const POSTER_TITLES = ["Neon Nights", "Aurora Fest", "Synthwave Live", "Gallery Opening", "Night Market", "Design Week", "Poetry Slam", "Sound Waves", "Future Fair", "City Lights"];
+const SOCIAL_LINES = ["Make it happen", "Stay curious", "Big news is coming", "We're live now", "New drop today", "Dream bigger", "Level up", "Good vibes only", "You've got this", "Create the future"];
+const PRES_TITLES = ["The Big Idea", "Q3 Review", "Roadmap 2027", "Our Mission", "Key Metrics", "Case Study", "Vision Deck", "Growth Plan", "Product Update", "Team Sync"];
+const PEOPLE = ["Ava Moreno", "Leo Park", "Mia Chen", "Sam Taylor", "Priya Nair", "Daniel Cruz", "Nora Vale", "Kai Wu", "Ines Rossi", "Omar Said"];
+const ROLES = ["Creative Director", "Founder & CEO", "Product Designer", "AI Engineer", "Growth Lead", "Photographer", "Writer", "Consultant", "Digital Artist", "Brand Strategist"];
+const FLYER_TITLES = ["Grand Opening", "Live Workshop", "Weekend Market", "Live Music", "Launch Party", "Pop-up Shop", "Charity Run", "Open House", "Game Night", "Meetup"];
+const IG_TITLES = ["Watch this", "5 quick tips", "Behind the scenes", "Save this post", "New post", "Tap to play", "This or that?", "Ask me anything", "Big giveaway", "Swipe up"];
+
+function pick<T>(arr: T[], n: number): T {
+  return arr[((n % arr.length) + arr.length) % arr.length];
+}
+
+// A small deterministic hash so different fields vary independently.
+function hash(n: number, salt: number): number {
+  let x = (n + 1) * (salt * 2654435761);
+  x = (x ^ (x >>> 15)) >>> 0;
+  return x;
+}
+
+function contentFor(category: string, n: number): { title: string; headline: string; tagline: string; tags: string[] } {
+  switch (category) {
+    case "logos": {
+      const name = pick(BRAND_WORDS, hash(n, 3));
+      const suffix = pick(BRAND_SUFFIX, hash(n, 5));
+      return { title: `${name} ${suffix} Logo`, headline: name, tagline: `${suffix} · est. 2026`, tags: ["logo", "brand", "monogram"] };
+    }
+    case "posters": {
+      const t = pick(POSTER_TITLES, hash(n, 3));
+      return { title: `${t} Poster`, headline: t, tagline: `Fri · 8PM · Hall ${1 + (hash(n, 7) % 9)}`, tags: ["poster", "event"] };
+    }
+    case "social": {
+      const t = pick(SOCIAL_LINES, hash(n, 3));
+      return { title: `${t} · Social`, headline: t, tagline: "@namcraft.studio", tags: ["social", "post"] };
+    }
+    case "presentations": {
+      const t = pick(PRES_TITLES, hash(n, 3));
+      return { title: `${t} Slide`, headline: t, tagline: "NAMCRAFT · 2026", tags: ["slide", "deck"] };
+    }
+    case "business-cards": {
+      const p = pick(PEOPLE, hash(n, 3));
+      const r = pick(ROLES, hash(n, 5));
+      return { title: `${p} Card`, headline: p, tagline: r, tags: ["card", "identity"] };
+    }
+    case "flyers": {
+      const t = pick(FLYER_TITLES, hash(n, 3));
+      return { title: `${t} Flyer`, headline: t, tagline: "Sat · free entry", tags: ["flyer", "promo"] };
+    }
+    case "instagram": {
+      const t = pick(IG_TITLES, hash(n, 3));
+      return { title: `${t} · IG`, headline: t, tagline: "double-tap ❤", tags: ["instagram", "story"] };
+    }
+    case "resumes": {
+      const p = pick(PEOPLE, hash(n, 3));
+      const r = pick(ROLES, hash(n, 5));
+      return { title: `${p} Résumé`, headline: p, tagline: r, tags: ["resume", "cv"] };
+    }
+    default:
+      return { title: `Design ${n}`, headline: "Your headline", tagline: "Your tagline", tags: ["design"] };
+  }
+}
+
+/** Reconstruct a procedural template from its integer index. Fully deterministic. */
+export function generateTemplate(index: number): Template {
+  const category = pick(CATEGORY_IDS, index);
+  const ratio =
+    category === "presentations" || category === "business-cards"
+      ? "16:9"
+      : pick(ALL_RATIOS, hash(index, 11));
+  const paletteId = pick(PALETTE_IDS, hash(index, 13));
+  const fontId = pick(FONT_IDS, hash(index, 17));
+  const darkText = paletteId === "cream" || paletteId === "lemon";
+  const { title, headline, tagline, tags } = contentFor(category, index);
+
+  const daysAgo = hash(index, 19) % 900;
+  const createdAt = new Date(Date.UTC(2026, 5, 1) - daysAgo * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+
+  return {
+    id: `gen-${index}`,
+    title,
+    category,
+    ratio,
+    headline,
+    tagline,
+    paletteId,
+    fontId,
+    darkText,
+    popularity: 30 + (hash(index, 23) % 70),
+    createdAt,
+    tags,
+  };
+}
+
+/** A large materialized pool of procedural templates for browsing/filtering. */
+export const GENERATED_TEMPLATES: Template[] = Array.from({ length: GEN_POOL_SIZE }, (_, i) =>
+  generateTemplate(i),
+);
+
+/** Everything browsable in the library: curated first, then the generated pool. */
+export const ALL_TEMPLATES: Template[] = [...CURATED_TEMPLATES, ...GENERATED_TEMPLATES];
+
+const GEN_ID_RE = /^gen-(\d+)$/;
+
 export function getTemplate(id: string): Template | undefined {
-  return TEMPLATES.find((t) => t.id === id);
+  const curated = TEMPLATES.find((t) => t.id === id);
+  if (curated) return curated;
+  const m = GEN_ID_RE.exec(id);
+  if (m) return generateTemplate(Number(m[1]));
+  return undefined;
+}
+
+/** Human-friendly big-number formatting, e.g. 3000000 -> "3M+". */
+export function formatCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M+`;
+  if (n >= 1_000) return `${Math.floor(n / 1_000)}K+`;
+  return String(n);
+}
+
+/** Indian-format count, e.g. 3000000 -> "30 Lakh+". */
+export function formatLakh(n: number): string {
+  if (n >= 100_000) return `${Math.floor(n / 100_000)} Lakh+`;
+  return String(n);
 }
 
 // Sanity defaults are re-exported for the editor's "reset" flow.

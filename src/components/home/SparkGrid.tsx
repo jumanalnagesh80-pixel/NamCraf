@@ -1,17 +1,17 @@
 import { Link } from "@tanstack/react-router";
-import { TEMPLATES } from "~/lib/templates";
+import { CURATED_TEMPLATES, TOTAL_TEMPLATE_COUNT, formatCount } from "~/lib/templates";
 import { TemplateCard } from "~/components/TemplateCard";
 import { Button } from "~/components/ui/Button";
 
 /** "Template Spark" — a curated preview grid of the most popular templates. */
 export function SparkGrid() {
-  const spark = [...TEMPLATES].sort((a, b) => b.popularity - a.popularity).slice(0, 8);
+  const spark = [...CURATED_TEMPLATES].sort((a, b) => b.popularity - a.popularity).slice(0, 8);
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6" aria-labelledby="spark-heading">
       <div className="mb-8 flex items-end justify-between gap-4">
         <div>
-          <span className="text-secondary text-sm font-bold tracking-wide uppercase">
+          <span className="text-gradient-neon text-sm font-bold tracking-wide uppercase">
             Template Spark
           </span>
           <h2 id="spark-heading" className="font-display mt-1 text-3xl font-black sm:text-4xl">
@@ -19,7 +19,9 @@ export function SparkGrid() {
           </h2>
         </div>
         <Link to="/templates" className="hidden sm:block">
-          <Button variant="outline">See all 40+</Button>
+          <Button variant="outline" className="glass">
+            Explore all {formatCount(TOTAL_TEMPLATE_COUNT)}
+          </Button>
         </Link>
       </div>
 
@@ -31,7 +33,9 @@ export function SparkGrid() {
 
       <div className="mt-8 flex justify-center sm:hidden">
         <Link to="/templates">
-          <Button variant="outline">See all 40+</Button>
+          <Button variant="outline" className="glass">
+            Explore all {formatCount(TOTAL_TEMPLATE_COUNT)}
+          </Button>
         </Link>
       </div>
     </section>

@@ -15,7 +15,7 @@ export function Header() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="border-border bg-background/80 sticky top-0 z-40 border-b backdrop-blur-md">
+    <header className="glass sticky top-0 z-40 border-b">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link to="/" aria-label="NAMCRAFT Graphic Studio — home">
           <BrandMark />

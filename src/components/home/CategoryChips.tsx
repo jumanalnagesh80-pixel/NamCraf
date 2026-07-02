@@ -14,7 +14,7 @@ export function CategoryChips() {
         </div>
         <Link
           to="/templates"
-          className="text-primary shrink-0 text-sm font-semibold hover:underline"
+          className="text-gradient-neon shrink-0 text-sm font-semibold hover:underline"
         >
           View all →
         </Link>
@@ -26,9 +26,9 @@ export function CategoryChips() {
             key={cat.id}
             to="/templates"
             search={{ category: cat.id }}
-            className="group border-border bg-card hover:border-primary hover:shadow-soft flex flex-col items-center gap-2 rounded-2xl border p-4 text-center transition hover:-translate-y-1"
+            className="group glass flex flex-col items-center gap-2 rounded-2xl p-4 text-center transition hover:-translate-y-1 hover:glow"
           >
-            <span className="bg-muted group-hover:bg-accent flex h-12 w-12 items-center justify-center rounded-xl text-2xl transition">
+            <span className="bg-gradient-neon animate-gradient-move flex h-12 w-12 items-center justify-center rounded-xl text-2xl">
               {cat.icon}
             </span>
             <span className="text-sm font-semibold">{cat.label}</span>
