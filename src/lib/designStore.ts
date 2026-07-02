@@ -28,7 +28,53 @@ export interface DesignElement {
   opacity?: number;
   /** mirror horizontally */
   flipH?: boolean;
+  /** text formatting */
+  bold?: boolean;
+  italic?: boolean;
+  align?: "left" | "center" | "right";
+  letterSpacing?: number;
+  /** layer state */
+  locked?: boolean;
+  hidden?: boolean;
 }
+
+/** CSS-filter adjustments applied to an uploaded background image. */
+export interface BgFilters {
+  brightness: number; // %
+  contrast: number; // %
+  saturate: number; // %
+  blur: number; // px
+  grayscale: number; // %
+}
+
+export function defaultBgFilters(): BgFilters {
+  return { brightness: 100, contrast: 100, saturate: 100, blur: 0, grayscale: 0 };
+}
+
+export function bgFilterCss(f: BgFilters | undefined): string {
+  const x = f ?? defaultBgFilters();
+  return `brightness(${x.brightness}%) contrast(${x.contrast}%) saturate(${x.saturate}%) blur(${x.blur}px) grayscale(${x.grayscale}%)`;
+}
+
+/** One-tap photo looks (built from the same adjustments). */
+export interface FilterPreset {
+  id: string;
+  name: string;
+  filters: BgFilters;
+}
+
+export const FILTER_PRESETS: FilterPreset[] = [
+  { id: "original", name: "Original", filters: { brightness: 100, contrast: 100, saturate: 100, blur: 0, grayscale: 0 } },
+  { id: "vivid", name: "Vivid", filters: { brightness: 106, contrast: 118, saturate: 145, blur: 0, grayscale: 0 } },
+  { id: "warm", name: "Warm", filters: { brightness: 106, contrast: 102, saturate: 128, blur: 0, grayscale: 0 } },
+  { id: "cool", name: "Cool", filters: { brightness: 100, contrast: 106, saturate: 88, blur: 0, grayscale: 0 } },
+  { id: "fade", name: "Fade", filters: { brightness: 116, contrast: 84, saturate: 82, blur: 0, grayscale: 0 } },
+  { id: "vintage", name: "Vintage", filters: { brightness: 108, contrast: 92, saturate: 76, blur: 0, grayscale: 18 } },
+  { id: "mono", name: "Mono", filters: { brightness: 104, contrast: 108, saturate: 0, blur: 0, grayscale: 100 } },
+  { id: "noir", name: "Noir", filters: { brightness: 92, contrast: 135, saturate: 0, blur: 0, grayscale: 100 } },
+  { id: "dreamy", name: "Dreamy", filters: { brightness: 110, contrast: 94, saturate: 112, blur: 2, grayscale: 0 } },
+  { id: "sharp", name: "Sharp", filters: { brightness: 100, contrast: 125, saturate: 110, blur: 0, grayscale: 0 } },
+];
 
 export interface DesignState {
   headline: string;
@@ -39,6 +85,7 @@ export interface DesignState {
   headlineSize: number; // px at the design's base resolution
   backgroundImage: string | null; // data URL or remote URL
   elements: DesignElement[];
+  bgFilters?: BgFilters;
 }
 
 export function defaultDesign(overrides: Partial<DesignState> = {}): DesignState {
@@ -51,14 +98,20 @@ export function defaultDesign(overrides: Partial<DesignState> = {}): DesignState
     headlineSize: 64,
     backgroundImage: null,
     elements: [],
+    bgFilters: defaultBgFilters(),
     ...overrides,
   };
 }
 
-/** Normalize a loaded design so older saves (without `elements`) stay valid. */
+/** Normalize a loaded design so older saves (without newer fields) stay valid. */
 function normalize(design: Partial<DesignState> | null): DesignState | null {
   if (!design) return null;
-  return { ...defaultDesign(), ...design, elements: design.elements ?? [] };
+  return {
+    ...defaultDesign(),
+    ...design,
+    elements: design.elements ?? [],
+    bgFilters: { ...defaultBgFilters(), ...(design.bgFilters ?? {}) },
+  };
 }
 
 const LS_PREFIX = "namcraft:design:";
@@ -119,6 +172,7 @@ function rowToDesign(row: TemplateDesignRow): DesignState {
     headlineSize: row.headline_size,
     backgroundImage: row.background_image,
     elements: (row.elements as DesignElement[] | null) ?? [],
+    bgFilters: { ...defaultBgFilters(), ...((row.bg_filters as Partial<BgFilters> | null) ?? {}) },
   };
 }
 
@@ -157,6 +211,7 @@ export async function saveCloudDesign(
       headline_size: design.headlineSize,
       background_image: design.backgroundImage,
       elements: design.elements,
+      bg_filters: design.bgFilters ?? defaultBgFilters(),
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id,template_id" },

@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
 import type { DesignState, DesignElement } from "~/lib/designStore";
+import { bgFilterCss } from "~/lib/designStore";
 import { getPalette } from "~/lib/palettes";
 import { getFont } from "~/lib/fonts";
 import { ratioToNumber, type AspectRatio } from "~/lib/templates";
@@ -75,6 +76,7 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
       if (!editable) return;
       e.stopPropagation();
       onSelectElement?.(el.id);
+      if (el.locked) return; // selectable but not draggable
       const startX = e.clientX;
       const startY = e.clientY;
       const origX = el.x;
@@ -168,6 +170,7 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
                     width: "100%",
                     height: "100%",
                     objectFit: "cover",
+                    filter: bgFilterCss(design.bgFilters),
                   }}
                 />
                 <div
@@ -273,6 +276,7 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
               }}
             >
               {elements.map((el) => {
+                if (el.hidden) return null;
                 const selected = editable && selectedId === el.id;
                 const isText = el.kind === "text";
                 const flip = el.flipH ? -1 : 1;
@@ -306,11 +310,13 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
                         style={{
                           fontSize: el.size,
                           lineHeight: 1.1,
-                          fontWeight: 800,
+                          fontWeight: el.bold ? 900 : 600,
+                          fontStyle: el.italic ? "italic" : "normal",
                           color: el.color,
                           fontFamily: getFont(el.fontId ?? design.fontId).stack,
                           whiteSpace: "pre-wrap",
-                          textAlign: "center",
+                          textAlign: el.align ?? "center",
+                          letterSpacing: el.letterSpacing ?? 0,
                         }}
                       >
                         {el.text || "Text"}
@@ -318,7 +324,7 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
                     ) : (
                       <span style={{ fontSize: el.size, lineHeight: 1 }}>{el.emoji}</span>
                     )}
-                    {selected && el.kind !== "text" && el.rotation === 0 && (
+                    {selected && el.kind !== "text" && el.rotation === 0 && !el.locked && (
                       <div
                         onPointerDown={(e) => startResize(e, el)}
                         title="Drag to resize"

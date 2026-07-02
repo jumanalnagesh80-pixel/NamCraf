@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { seo } from "~/lib/seo";
 import { SiteLayout } from "~/components/SiteLayout";
 import { TemplateCard } from "~/components/TemplateCard";
+import { CategoryThumb } from "~/components/CategoryThumb";
 import { Button } from "~/components/ui/Button";
 import {
   ALL_TEMPLATES,
@@ -150,6 +151,28 @@ function TemplatesLibrary() {
             {formatCount(TOTAL_TEMPLATE_COUNT)}.
           </p>
         </header>
+
+        {/* Visual category browser */}
+        <div className="mb-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+              Browse by category
+            </h2>
+          </div>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+            {CATEGORIES.map((cat) => (
+              <Link
+                key={cat.id}
+                to="/category/$slug"
+                params={{ slug: cat.id }}
+                aria-label={`${cat.label} templates`}
+                className="group block transition hover:-translate-y-1"
+              >
+                <CategoryThumb category={cat} className="shadow-soft group-hover:shadow-stamp" />
+              </Link>
+            ))}
+          </div>
+        </div>
 
         {/* Search bar synced with the URL */}
         <form

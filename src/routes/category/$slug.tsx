@@ -10,6 +10,7 @@ import {
   getCategory,
   formatCount,
 } from "~/lib/templates";
+import { CategoryThumb } from "~/components/CategoryThumb";
 
 export const Route = createFileRoute("/category/$slug")({
   loader: ({ params }) => {
@@ -103,12 +104,10 @@ function CategoryPage() {
               key={c.id}
               to="/category/$slug"
               params={{ slug: c.id }}
-              className="group glass flex flex-col items-center gap-2 rounded-2xl p-4 text-center transition hover:-translate-y-1 hover:glow"
+              aria-label={`${c.label} templates`}
+              className="group block transition hover:-translate-y-1"
             >
-              <span className="bg-gradient-neon animate-gradient-move flex h-11 w-11 items-center justify-center rounded-xl text-xl">
-                {c.icon}
-              </span>
-              <span className="text-sm font-semibold">{c.label}</span>
+              <CategoryThumb category={c} className="shadow-soft group-hover:shadow-stamp" />
             </Link>
           ))}
         </div>

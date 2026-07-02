@@ -60,6 +60,7 @@ export function CommandPalette() {
     const nav: CommandItem[] = [
       { id: "n-home", icon: "🏠", label: "Home", run: go(() => navigate({ to: "/" })) },
       { id: "n-templates", icon: "🖼️", label: "Browse all templates", run: go(() => navigate({ to: "/templates" })) },
+      { id: "n-blank", icon: "➕", label: "Create a blank design", run: go(() => navigate({ to: "/templates/$id", params: { id: "blank-ig-post" } })) },
       { id: "n-fav", icon: "⭐", label: "Favorites & saved designs", run: go(() => navigate({ to: "/favorites" })) },
       { id: "n-contact", icon: "✉️", label: "Contact", run: go(() => navigate({ to: "/contact" })) },
       { id: "n-auth", icon: "🔐", label: "Sign in / sign up", run: go(() => navigate({ to: "/auth" })) },
