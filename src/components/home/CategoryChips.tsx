@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { CATEGORIES } from "~/lib/templates";
+import { CategoryThumb } from "~/components/CategoryThumb";
 
-/** Grid of category chips, each linking to filtered templates. */
+/** Grid of category thumbnails, each linking to its landing page. */
 export function CategoryChips() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6" aria-labelledby="categories-heading">
@@ -20,18 +21,16 @@ export function CategoryChips() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8">
         {CATEGORIES.map((cat) => (
           <Link
             key={cat.id}
             to="/category/$slug"
             params={{ slug: cat.id }}
-            className="group glass flex flex-col items-center gap-2 rounded-2xl p-4 text-center transition hover:-translate-y-1 hover:glow"
+            aria-label={`${cat.label} templates`}
+            className="group block transition hover:-translate-y-1"
           >
-            <span className="bg-gradient-neon animate-gradient-move flex h-12 w-12 items-center justify-center rounded-xl text-2xl">
-              {cat.icon}
-            </span>
-            <span className="text-sm font-semibold">{cat.label}</span>
+            <CategoryThumb category={cat} className="shadow-soft group-hover:shadow-stamp" />
           </Link>
         ))}
       </div>
