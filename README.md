@@ -114,3 +114,13 @@ daisy accent, `GRAPHIC STUDIO` tagline). It's used in the header (`LogoMark` in
 
 Prefer a pixel-exact raster? Drop your file at `public/logo-namcraft.png` and point `LogoMark`
 at `/logo-namcraft.png` instead.
+
+
+## 📲 Installable PWA (offline)
+
+NAMCRAFT is a Progressive Web App: a web manifest (`public/manifest.webmanifest`) makes it
+installable to a phone home screen or desktop, and a service worker (`public/sw.js`) caches
+the app shell + static assets for fast repeat visits and basic offline use. The worker is
+registered in production only (see `src/components/RegisterSW.tsx`) so it never interferes with
+the Vite dev server. Cross-origin requests (Google Fonts, Supabase) are intentionally not
+intercepted.

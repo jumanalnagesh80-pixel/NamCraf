@@ -12,6 +12,7 @@ import { themeInitScript, ThemeProvider } from "~/hooks/useTheme";
 import { AuthProvider } from "~/hooks/useAuth";
 import { FavoritesProvider } from "~/hooks/useFavorites";
 import { ToastProvider } from "~/components/ui/Toast";
+import { RegisterSW } from "~/components/RegisterSW";
 import { DefaultCatchBoundary } from "~/components/DefaultCatchBoundary";
 import { NotFound } from "~/components/NotFound";
 
@@ -62,12 +63,17 @@ export const Route = createRootRoute({
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
         { name: "theme-color", content: "#2E4BC7" },
+        { name: "mobile-web-app-capable", content: "yes" },
+        { name: "apple-mobile-web-app-capable", content: "yes" },
+        { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+        { name: "apple-mobile-web-app-title", content: "NAMCRAFT" },
         ...base.meta,
       ],
       links: [
         { rel: "stylesheet", href: appCss },
         { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
         { rel: "apple-touch-icon", href: "/favicon.svg" },
+        { rel: "manifest", href: "/manifest.webmanifest" },
         { rel: "preconnect", href: "https://fonts.googleapis.com" },
         {
           rel: "preconnect",
@@ -104,6 +110,7 @@ function RootComponent() {
         <AuthProvider>
           <FavoritesProvider>
             <ToastProvider>
+              <RegisterSW />
               <Outlet />
             </ToastProvider>
           </FavoritesProvider>

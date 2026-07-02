@@ -1,0 +1,16 @@
+{
+  "name": "NAMCRAFT Graphic Studio",
+  "short_name": "NAMCRAFT",
+  "description": "A free-to-use online graphic design tool. Design anything from millions of templates.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FBF5E9",
+  "theme_color": "#2E4BC7",
+  "categories": ["graphics", "productivity", "design"],
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/logo-namcraft.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
