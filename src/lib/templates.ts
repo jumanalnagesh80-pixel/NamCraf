@@ -369,6 +369,11 @@ export function getTemplate(id: string): Template | undefined {
   return undefined;
 }
 
+/** A representative template for a category (prefers a curated one). */
+export function sampleTemplateForCategory(id: string): Template | undefined {
+  return ALL_TEMPLATES.find((t) => t.category === id);
+}
+
 /** Human-friendly big-number formatting, e.g. 3000000 -> "3M+". */
 export function formatCount(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M+`;
