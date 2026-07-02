@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { toPng, toSvg } from "html-to-image";
+import { toPng, toSvg, toJpeg } from "html-to-image";
 import { seo } from "~/lib/seo";
 import { SiteLayout } from "~/components/SiteLayout";
 import { DesignCanvas, BASE_WIDTH } from "~/components/DesignCanvas";
 import { ShapeGraphic } from "~/components/ShapeGraphic";
 import { FavoriteButton } from "~/components/FavoriteButton";
 import { Button } from "~/components/ui/Button";
+import { useToast } from "~/components/ui/Toast";
 import { PALETTES, getPalette } from "~/lib/palettes";
 import { fontsByLanguage, getFont } from "~/lib/fonts";
 import { SHAPES, STICKER_SETS, type ShapeType } from "~/lib/graphics";
@@ -70,8 +71,12 @@ function EditorPage() {
     }),
   );
   const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [busy, setBusy] = useState<null | "png" | "svg">(null);
+  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const { toast } = useToast();
+  const [exportFormat, setExportFormat] = useState<"png" | "jpg" | "svg">("png");
+  const [exportScale, setExportScale] = useState(2);
+  const [transparent, setTransparent] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [stickerSet, setStickerSet] = useState(STICKER_SETS[0].id);
 
@@ -316,18 +321,23 @@ function EditorPage() {
         const ok = await saveCloudDesign(user.id, template.id, design);
         setSaveState(ok ? "saved" : "error");
         setMessage(ok ? "Saved to your cloud — synced across devices." : "Could not save to cloud.");
+        toast(
+          ok ? "Saved to your cloud — synced across devices." : "Could not save to cloud.",
+          ok ? "success" : "error",
+        );
       } else {
         saveLocalDesign(template.id, design);
         setSaveState("saved");
-        setMessage(
-          cloudEnabled
-            ? "Saved on this device. Sign in to sync everywhere."
-            : "Saved on this device.",
-        );
+        const msg = cloudEnabled
+          ? "Saved on this device. Sign in to sync everywhere."
+          : "Saved on this device.";
+        setMessage(msg);
+        toast(msg, "success");
       }
     } catch {
       setSaveState("error");
       setMessage("Something went wrong while saving.");
+      toast("Something went wrong while saving.", "error");
     }
     setTimeout(() => setSaveState("idle"), 2500);
   }
@@ -349,24 +359,43 @@ function EditorPage() {
     return `namcraft-${slug || template.id}.${ext}`;
   }
 
-  async function download(kind: "png" | "svg") {
+  async function download() {
     if (!exportRef.current) return;
-    setBusy(kind);
+    setBusy(true);
     await deselectForCapture();
     try {
-      const options = { pixelRatio: 2, cacheBust: true, backgroundColor: "#ffffff" };
+      const node = exportRef.current;
+      const opts: Record<string, unknown> = { cacheBust: true };
+      if (exportFormat === "svg") {
+        opts.pixelRatio = 1;
+      } else {
+        opts.pixelRatio = exportScale;
+      }
+      if (exportFormat === "png") {
+        if (!transparent) opts.backgroundColor = "#ffffff";
+      } else if (exportFormat === "jpg") {
+        opts.backgroundColor = "#ffffff";
+        opts.quality = 0.95;
+      }
       const dataUrl =
-        kind === "png"
-          ? await toPng(exportRef.current, options)
-          : await toSvg(exportRef.current, options);
+        exportFormat === "png"
+          ? await toPng(node, opts)
+          : exportFormat === "jpg"
+            ? await toJpeg(node, opts)
+            : await toSvg(node, opts);
       const link = document.createElement("a");
-      link.download = fileName(kind);
+      link.download = fileName(exportFormat);
       link.href = dataUrl;
       link.click();
+      toast(
+        `Downloaded ${exportFormat.toUpperCase()}${exportFormat !== "svg" ? ` @ ${exportScale}×` : ""}`,
+        "success",
+      );
     } catch {
       setMessage("Export failed — please try again.");
+      toast("Export failed — please try again.", "error");
     } finally {
-      setBusy(null);
+      setBusy(false);
     }
   }
 
@@ -484,13 +513,46 @@ function EditorPage() {
               )}
             </div>
 
-            {/* Export bar */}
+            {/* Export options */}
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Button onClick={() => download("png")} disabled={busy !== null}>
-                {busy === "png" ? "Exporting…" : "⬇ Download PNG"}
-              </Button>
-              <Button variant="secondary" onClick={() => download("svg")} disabled={busy !== null}>
-                {busy === "svg" ? "Exporting…" : "⬇ Download SVG"}
+              <select
+                value={exportFormat}
+                onChange={(e) => setExportFormat(e.target.value as "png" | "jpg" | "svg")}
+                className="border-border bg-card rounded-full border px-3 py-2 text-sm font-medium outline-none"
+                aria-label="Export format"
+              >
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+                <option value="svg">SVG (vector)</option>
+              </select>
+              <select
+                value={exportScale}
+                onChange={(e) => setExportScale(Number(e.target.value))}
+                disabled={exportFormat === "svg"}
+                className="border-border bg-card rounded-full border px-3 py-2 text-sm font-medium outline-none disabled:opacity-50"
+                aria-label="Export scale"
+              >
+                <option value={1}>1× · 1080px</option>
+                <option value={2}>2× · 2160px</option>
+                <option value={3}>3× · 3240px</option>
+              </select>
+              {exportFormat === "png" && (
+                <label className="border-border flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    checked={transparent}
+                    onChange={(e) => setTransparent(e.target.checked)}
+                    className="accent-primary"
+                  />
+                  Transparent
+                </label>
+              )}
+              <Button
+                onClick={download}
+                disabled={busy}
+                className="bg-gradient-neon glow animate-gradient-move"
+              >
+                {busy ? "Exporting…" : "⬇ Download"}
               </Button>
               <Button variant="outline" onClick={handleSave} disabled={saveState === "saving"}>
                 {saveState === "saving"

@@ -11,6 +11,7 @@ import { GOOGLE_FONTS_HREF } from "~/lib/fonts";
 import { themeInitScript, ThemeProvider } from "~/hooks/useTheme";
 import { AuthProvider } from "~/hooks/useAuth";
 import { FavoritesProvider } from "~/hooks/useFavorites";
+import { ToastProvider } from "~/components/ui/Toast";
 import { DefaultCatchBoundary } from "~/components/DefaultCatchBoundary";
 import { NotFound } from "~/components/NotFound";
 
@@ -102,7 +103,9 @@ function RootComponent() {
       <ThemeProvider>
         <AuthProvider>
           <FavoritesProvider>
-            <Outlet />
+            <ToastProvider>
+              <Outlet />
+            </ToastProvider>
           </FavoritesProvider>
         </AuthProvider>
       </ThemeProvider>
