@@ -11,14 +11,22 @@ export interface TemplateCategory {
 }
 
 export const CATEGORIES: TemplateCategory[] = [
+  { id: "social", label: "Social Posts", icon: "💬" },
+  { id: "instagram", label: "Instagram", icon: "📸" },
+  { id: "videos", label: "Videos", icon: "🎬" },
+  { id: "presentations", label: "Presentations", icon: "📊" },
+  { id: "websites", label: "Websites", icon: "🌐" },
+  { id: "whiteboards", label: "Whiteboards", icon: "🧠" },
+  { id: "docs", label: "Docs", icon: "📑" },
   { id: "logos", label: "Logos", icon: "✳️" },
   { id: "posters", label: "Posters", icon: "🖼️" },
-  { id: "social", label: "Social Posts", icon: "💬" },
-  { id: "presentations", label: "Presentations", icon: "📊" },
-  { id: "business-cards", label: "Business Cards", icon: "🪪" },
   { id: "flyers", label: "Flyers", icon: "📄" },
-  { id: "instagram", label: "Instagram", icon: "📸" },
+  { id: "business-cards", label: "Business Cards", icon: "🪪" },
   { id: "resumes", label: "Resumes", icon: "📝" },
+  { id: "marketing", label: "Marketing", icon: "📣" },
+  { id: "printables", label: "Printables", icon: "🖨️" },
+  { id: "mockups", label: "Mockups", icon: "📱" },
+  { id: "ebooks", label: "E-books", icon: "📚" },
 ];
 
 export const RATIOS: { id: AspectRatio; label: string }[] = [
@@ -61,6 +69,14 @@ export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   flyers: "Spread the word. Eye-catching flyers for openings, workshops, markets and gigs.",
   instagram: "Own the grid. Stories, carousels and reel covers designed to stop thumbs.",
   resumes: "Get hired in style. Modern, recruiter-friendly résumés that read as clearly as they look.",
+  videos: "Make it move. Reels, shorts and animated posts — trim, caption and export video-ready designs.",
+  websites: "Ship a page today. Simple, striking landing pages and link-in-bio sites, no code needed.",
+  whiteboards: "Think together. Infinite whiteboards for brainstorms, planning and team workshops.",
+  docs: "Write it beautifully. Interactive docs, reports and newsletters with rich media and tables.",
+  marketing: "Convert more. Ads, banners and campaigns tuned to grab attention and drive clicks.",
+  printables: "Print at home. Wall art, planners, invitations and printables ready for any printer.",
+  mockups: "Show it in context. Device and product mockups that make your work look shipped.",
+  ebooks: "Package your knowledge. Polished e-book and lead-magnet covers and interiors.",
 };
 
 export function ratioToNumber(ratio: AspectRatio): number {
@@ -148,7 +164,7 @@ export const CURATED_TEMPLATES = TEMPLATES;
 // ============================================================================
 
 /** Marketing / catalog size claim shown across the UI. */
-export const TOTAL_TEMPLATE_COUNT = 3_000_000;
+export const TOTAL_TEMPLATE_COUNT = 4_000_000;
 
 /** How many procedural templates to keep in memory for browsing/filtering. */
 export const GEN_POOL_SIZE = 6000;
@@ -220,6 +236,38 @@ function contentFor(category: string, n: number): { title: string; headline: str
       const r = pick(ROLES, hash(n, 5));
       return { title: `${p} Résumé`, headline: p, tagline: r, tags: ["resume", "cv"] };
     }
+    case "videos": {
+      const t = pick(SOCIAL_LINES, hash(n, 3));
+      return { title: `${t} · Video`, headline: t, tagline: "▶ tap to play", tags: ["video", "reel", "short"] };
+    }
+    case "websites": {
+      const name = pick(BRAND_WORDS, hash(n, 3));
+      return { title: `${name} Landing Page`, headline: name, tagline: "build something people love", tags: ["website", "landing"] };
+    }
+    case "whiteboards": {
+      const t = pick(PRES_TITLES, hash(n, 5));
+      return { title: `${t} Whiteboard`, headline: t, tagline: "brainstorm · plan · align", tags: ["whiteboard", "team"] };
+    }
+    case "docs": {
+      const t = pick(PRES_TITLES, hash(n, 7));
+      return { title: `${t} Doc`, headline: t, tagline: "a clean, shareable document", tags: ["doc", "report"] };
+    }
+    case "marketing": {
+      const t = pick(SOCIAL_LINES, hash(n, 5));
+      return { title: `${t} Ad`, headline: t, tagline: "shop now →", tags: ["ad", "marketing", "banner"] };
+    }
+    case "printables": {
+      const t = pick(POSTER_TITLES, hash(n, 5));
+      return { title: `${t} Printable`, headline: t, tagline: "print at home · A4", tags: ["printable", "wall art"] };
+    }
+    case "mockups": {
+      const name = pick(BRAND_WORDS, hash(n, 5));
+      return { title: `${name} Mockup`, headline: name, tagline: "product · preview", tags: ["mockup", "product"] };
+    }
+    case "ebooks": {
+      const t = pick(PRES_TITLES, hash(n, 9));
+      return { title: `${t} E-book`, headline: t, tagline: "a NAMCRAFT guide", tags: ["ebook", "cover"] };
+    }
     default:
       return { title: `Design ${n}`, headline: "Your headline", tagline: "Your tagline", tags: ["design"] };
   }
@@ -228,9 +276,12 @@ function contentFor(category: string, n: number): { title: string; headline: str
 /** Reconstruct a procedural template from its integer index. Fully deterministic. */
 export function generateTemplate(index: number): Template {
   const category = pick(CATEGORY_IDS, index);
-  const ratio =
-    category === "presentations" || category === "business-cards"
-      ? "16:9"
+  const wide = ["videos", "presentations", "websites", "whiteboards", "business-cards", "marketing"];
+  const portrait = ["docs", "ebooks", "printables", "resumes", "mockups"];
+  const ratio: AspectRatio = wide.includes(category)
+    ? "16:9"
+    : portrait.includes(category)
+      ? pick(["3:4", "4:5"] as AspectRatio[], hash(index, 11))
       : pick(ALL_RATIOS, hash(index, 11));
   const paletteId = pick(PALETTE_IDS, hash(index, 13));
   const fontId = pick(FONT_IDS, hash(index, 17));
