@@ -5,7 +5,7 @@
  */
 import { getSupabase, type TemplateDesignRow } from "./supabase";
 import { DEFAULT_PALETTE_ID } from "./palettes";
-import { DEFAULT_FONT_ID } from "./fonts";
+import { DEFAULT_BODY_FONT_ID, DEFAULT_FONT_ID } from "./fonts";
 import type { ShapeType } from "./graphics";
 
 /** A graphic element (shape or sticker) placed on the canvas. Positions are in
@@ -80,7 +80,9 @@ export interface DesignState {
   headline: string;
   tagline: string;
   paletteId: string;
-  fontId: string;
+  fontId: string; // heading font id
+  /** body / supporting-copy font id (from the curated font pairing) */
+  bodyFontId: string;
   darkText: boolean;
   headlineSize: number; // px at the design's base resolution
   backgroundImage: string | null; // data URL or remote URL
@@ -89,11 +91,12 @@ export interface DesignState {
 }
 
 export function defaultDesign(overrides: Partial<DesignState> = {}): DesignState {
-  return {
+  const base: DesignState = {
     headline: "",
     tagline: "",
     paletteId: DEFAULT_PALETTE_ID,
     fontId: DEFAULT_FONT_ID,
+    bodyFontId: DEFAULT_BODY_FONT_ID,
     darkText: false,
     headlineSize: 64,
     backgroundImage: null,
@@ -101,6 +104,10 @@ export function defaultDesign(overrides: Partial<DesignState> = {}): DesignState
     bgFilters: defaultBgFilters(),
     ...overrides,
   };
+  // Guard against an explicit `undefined` override wiping required fields.
+  base.bodyFontId = base.bodyFontId ?? DEFAULT_BODY_FONT_ID;
+  base.fontId = base.fontId ?? DEFAULT_FONT_ID;
+  return base;
 }
 
 /** Normalize a loaded design so older saves (without newer fields) stay valid. */
@@ -109,6 +116,7 @@ function normalize(design: Partial<DesignState> | null): DesignState | null {
   return {
     ...defaultDesign(),
     ...design,
+    bodyFontId: design.bodyFontId ?? DEFAULT_BODY_FONT_ID,
     elements: design.elements ?? [],
     bgFilters: { ...defaultBgFilters(), ...(design.bgFilters ?? {}) },
   };
@@ -168,6 +176,7 @@ function rowToDesign(row: TemplateDesignRow): DesignState {
     tagline: row.tagline,
     paletteId: row.palette_id,
     fontId: row.font_id,
+    bodyFontId: row.body_font_id ?? DEFAULT_BODY_FONT_ID,
     darkText: row.dark_text,
     headlineSize: row.headline_size,
     backgroundImage: row.background_image,
@@ -207,6 +216,7 @@ export async function saveCloudDesign(
       tagline: design.tagline,
       palette_id: design.paletteId,
       font_id: design.fontId,
+      body_font_id: design.bodyFontId,
       dark_text: design.darkText,
       headline_size: design.headlineSize,
       background_image: design.backgroundImage,

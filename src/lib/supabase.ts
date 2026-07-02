@@ -51,6 +51,7 @@ export interface TemplateDesignRow {
   tagline: string;
   palette_id: string;
   font_id: string;
+  body_font_id: string | null;
   dark_text: boolean;
   headline_size: number;
   background_image: string | null;

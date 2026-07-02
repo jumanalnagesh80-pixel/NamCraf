@@ -10,6 +10,12 @@ import { Button } from "~/components/ui/Button";
 import { useToast } from "~/components/ui/Toast";
 import { PALETTES, getPalette } from "~/lib/palettes";
 import { fontsByLanguage, getFont } from "~/lib/fonts";
+import {
+  pairsForCategory,
+  shuffleNextPair,
+  packForCategory,
+  type FontPair,
+} from "~/lib/fontPairings";
 import { SHAPES, STICKER_SETS, type ShapeType } from "~/lib/graphics";
 import { categoryLabel, getTemplate, ratioToNumber } from "~/lib/templates";
 import {
@@ -68,10 +74,13 @@ function EditorPage() {
       tagline: template.tagline,
       paletteId: template.paletteId,
       fontId: template.fontId,
+      bodyFontId: template.bodyFontId ?? undefined,
       darkText: template.darkText,
       headlineSize: 96,
     }),
   );
+  // Which curated font pairing is currently applied (drives "Shuffle Fonts").
+  const [pairId, setPairId] = useState<string | undefined>(template.pairId);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -351,6 +360,16 @@ function EditorPage() {
 
   const update = <K extends keyof DesignState>(key: K, value: DesignState[K]) =>
     setDesign((d) => ({ ...d, [key]: value }));
+
+  // ---- Font pairing (curated Starter Packs) ----
+  const fontPack = packForCategory(template.category);
+  function applyPair(pair: FontPair) {
+    setPairId(pair.id);
+    setDesign((d) => ({ ...d, fontId: pair.headingFontId, bodyFontId: pair.bodyFontId }));
+  }
+  function shuffleFonts() {
+    applyPair(shuffleNextPair(template.category, pairId));
+  }
 
   function onUploadImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -692,29 +711,107 @@ function EditorPage() {
               </div>
             </Panel>
 
-            <Panel title="Font · all languages">
-              <select
-                value={design.fontId}
-                onChange={(e) => update("fontId", e.target.value)}
-                className="editor-input"
-                aria-label="Font family"
-              >
-                {fontsByLanguage().map((group) => (
-                  <optgroup key={group.lang} label={group.lang}>
-                    {group.fonts.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-              <p
-                className="border-border mt-3 truncate rounded-xl border px-3 py-3 text-center text-xl"
-                style={{ fontFamily: getFont(design.fontId).stack }}
-              >
-                {design.headline || "Aa · अ · ع · あ · 한"}
-              </p>
+            <Panel title="Fonts & pairing">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="text-sm font-semibold">{fontPack.label}</div>
+                  <div className="text-muted-foreground text-xs">{fontPack.mood}</div>
+                </div>
+                <Button size="sm" variant="outline" onClick={shuffleFonts}>
+                  🔀 Shuffle
+                </Button>
+              </div>
+
+              {/* Curated pairs for this category — always designed, never random */}
+              <div className="mt-1 grid grid-cols-2 gap-2">
+                {pairsForCategory(template.category).map((p) => {
+                  const active = pairId === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => applyPair(p)}
+                      aria-pressed={active}
+                      className={cn(
+                        "rounded-xl border-2 px-3 py-2 text-left transition",
+                        active ? "border-primary bg-muted" : "border-border hover:bg-muted",
+                      )}
+                    >
+                      <span
+                        className="block truncate text-lg leading-tight"
+                        style={{ fontFamily: getFont(p.headingFontId).stack }}
+                      >
+                        {getFont(p.headingFontId).name}
+                      </span>
+                      <span
+                        className="text-muted-foreground block truncate text-xs"
+                        style={{ fontFamily: getFont(p.bodyFontId).stack }}
+                      >
+                        {getFont(p.bodyFontId).name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <Field label="Heading font">
+                <select
+                  value={design.fontId}
+                  onChange={(e) => {
+                    setPairId(undefined);
+                    update("fontId", e.target.value);
+                  }}
+                  className="editor-input"
+                  aria-label="Heading font family"
+                >
+                  {fontsByLanguage().map((group) => (
+                    <optgroup key={group.lang} label={group.lang}>
+                      {group.fonts.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Body font">
+                <select
+                  value={design.bodyFontId}
+                  onChange={(e) => {
+                    setPairId(undefined);
+                    update("bodyFontId", e.target.value);
+                  }}
+                  className="editor-input"
+                  aria-label="Body font family"
+                >
+                  {fontsByLanguage().map((group) => (
+                    <optgroup key={group.lang} label={group.lang}>
+                      {group.fonts.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </Field>
+
+              <div className="border-border mt-1 rounded-xl border px-3 py-3">
+                <div
+                  className="truncate text-2xl leading-tight"
+                  style={{ fontFamily: getFont(design.fontId).stack }}
+                >
+                  {design.headline || "Your headline"}
+                </div>
+                <div
+                  className="text-muted-foreground truncate text-sm"
+                  style={{ fontFamily: getFont(design.bodyFontId).stack }}
+                >
+                  {design.tagline || "Your supporting tagline · अ · ع · あ · 한"}
+                </div>
+              </div>
             </Panel>
 
             <Panel title="Elements · text, shapes & stickers">
