@@ -48,6 +48,7 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
     const [scale, setScale] = useState(0.3);
     const scaleRef = useRef(scale);
     scaleRef.current = scale;
+    const [guides, setGuides] = useState<{ v: boolean; h: boolean }>({ v: false, h: false });
 
     const ratioNum = ratioToNumber(ratio);
     const baseHeight = Math.round(BASE_WIDTH / ratioNum);
@@ -78,12 +79,45 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
       const startY = e.clientY;
       const origX = el.x;
       const origY = el.y;
+      // approximate box for snapping (text boxes size to content)
+      const w = el.kind === "text" ? el.size * 3 : el.size;
+      const h = el.kind === "text" ? el.size * 1.2 : el.size;
+      const T = 16;
       const move = (ev: PointerEvent) => {
         const s = scaleRef.current || 1;
-        onElementChange?.(el.id, {
-          x: origX + (ev.clientX - startX) / s,
-          y: origY + (ev.clientY - startY) / s,
-        });
+        let nx = origX + (ev.clientX - startX) / s;
+        let ny = origY + (ev.clientY - startY) / s;
+        let gv = false;
+        let gh = false;
+        if (Math.abs(nx + w / 2 - BASE_WIDTH / 2) < T) {
+          nx = BASE_WIDTH / 2 - w / 2;
+          gv = true;
+        }
+        if (Math.abs(ny + h / 2 - baseHeight / 2) < T) {
+          ny = baseHeight / 2 - h / 2;
+          gh = true;
+        }
+        setGuides({ v: gv, h: gh });
+        onElementChange?.(el.id, { x: nx, y: ny });
+      };
+      const up = () => {
+        setGuides({ v: false, h: false });
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+      };
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+    }
+
+    function startResize(e: React.PointerEvent, el: DesignElement) {
+      if (!editable) return;
+      e.stopPropagation();
+      const startX = e.clientX;
+      const origSize = el.size;
+      const move = (ev: PointerEvent) => {
+        const s = scaleRef.current || 1;
+        const next = Math.max(40, Math.min(900, origSize + (ev.clientX - startX) / s));
+        onElementChange?.(el.id, { size: next });
       };
       const up = () => {
         window.removeEventListener("pointermove", move);
@@ -284,10 +318,55 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
                     ) : (
                       <span style={{ fontSize: el.size, lineHeight: 1 }}>{el.emoji}</span>
                     )}
+                    {selected && el.kind !== "text" && el.rotation === 0 && (
+                      <div
+                        onPointerDown={(e) => startResize(e, el)}
+                        title="Drag to resize"
+                        style={{
+                          position: "absolute",
+                          right: -13,
+                          bottom: -13,
+                          width: 26,
+                          height: 26,
+                          borderRadius: "50%",
+                          background: "#ffffff",
+                          border: "3px solid #2E4BC7",
+                          cursor: "nwse-resize",
+                        }}
+                      />
+                    )}
                   </div>
                 );
               })}
             </div>
+
+            {/* Center alignment guides (shown while dragging) */}
+            {guides.v && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: BASE_WIDTH / 2 - 1,
+                  top: 0,
+                  width: 2,
+                  height: baseHeight,
+                  background: "#F26E86",
+                  pointerEvents: "none",
+                }}
+              />
+            )}
+            {guides.h && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: baseHeight / 2 - 1,
+                  left: 0,
+                  height: 2,
+                  width: BASE_WIDTH,
+                  background: "#F26E86",
+                  pointerEvents: "none",
+                }}
+              />
+            )}
           </div>
         </div>
       </div>
