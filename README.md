@@ -22,7 +22,7 @@ hand-crafted "postage stamp" design system.
   `/favorites` routes.
 - **Dark mode** — `ThemeToggle` in every header with a no-flash init script.
 - **SEO & social** — per-route title/description/OpenGraph/Twitter tags, JSON-LD Organization
-  schema, `sitemap.xml` server route, `robots.txt`, and self-referencing canonicals.
+  schema, `public/sitemap.xml`, `robots.txt`, and self-referencing canonicals.
 
 ## 🛠️ Tech Stack
 
@@ -71,3 +71,33 @@ src/
   hooks/          # theme, auth, favorites contexts
   styles.css      # design system tokens (OKLCH), dark mode, gradients, utilities
 ```
+
+
+## 🗺️ Sitemap
+
+The sitemap ships as a static [`public/sitemap.xml`](./public/sitemap.xml) so it works on any
+TanStack Start version and never affects app boot. Update the host if you deploy to a custom
+domain, and add a `<url>` entry when you add a template in `src/lib/templates.ts`.
+
+Prefer a **dynamic** server route that always stays in sync with the catalog? Create
+`src/routes/sitemap[.]xml.ts` (delete the static file first to avoid a path clash):
+
+```ts
+import { createServerFileRoute } from "@tanstack/react-start/server";
+import { SITE_URL } from "~/lib/seo";
+import { TEMPLATES } from "~/lib/templates";
+
+export const ServerRoute = createServerFileRoute().methods({
+  GET: () => {
+    const paths = ["/", "/templates", "/contact", "/favorites",
+      ...TEMPLATES.map((t) => `/templates/${t.id}`)];
+    const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${paths
+      .map((p) => `  <url><loc>${SITE_URL}${p === "/" ? "" : p}</loc></url>`)
+      .join("\n")}\n</urlset>`;
+    return new Response(body, { headers: { "Content-Type": "application/xml" } });
+  },
+});
+```
+
+> The exact server-route API (`createServerFileRoute`) can vary between TanStack Start
+> versions — check the docs for the version pinned in `package.json` if you adopt this.

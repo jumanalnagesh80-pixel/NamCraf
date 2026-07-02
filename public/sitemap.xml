@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Static sitemap for NAMCRAFT Graphic Studio.
+  Update the https://namcraft.studio host below if you deploy to a custom domain,
+  and add a <url> entry when you add a new template in src/lib/templates.ts.
+  (See README for an optional dynamic server-route alternative.)
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://namcraft.studio</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://namcraft.studio/templates</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://namcraft.studio/contact</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://namcraft.studio/favorites</loc><changefreq>weekly</changefreq><priority>0.5</priority></url>
+
+  <url><loc>https://namcraft.studio/templates/logo-stamp-mark</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/logo-blossom-badge</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/logo-lemon-circle</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/logo-ink-serif</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/logo-mint-leaf</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/poster-jazz-night</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/poster-art-fair</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/poster-film-fest</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/poster-sale</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/poster-lemonade</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/social-quote</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/social-announce</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/social-tip</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/social-event</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/social-thankyou</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/pres-title</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/pres-section</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/pres-stat</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/pres-quote</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/pres-thanks</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/card-classic</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/card-bold</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/card-blossom</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/card-mono</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/flyer-workshop</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/flyer-market</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/flyer-gig</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/flyer-grand-open</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/ig-story</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/ig-carousel</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/ig-grid</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/ig-reels</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/ig-promo</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/resume-modern</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/resume-bold-header</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/resume-serif</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/resume-mint</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/poster-concert-wide</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/social-poll</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/ig-quote-square</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/flyer-food-menu</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://namcraft.studio/templates/pres-agenda</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+</urlset>
