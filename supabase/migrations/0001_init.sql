@@ -77,6 +77,7 @@ create table if not exists public.template_designs (
   dark_text        boolean not null default false,
   headline_size    integer not null default 96,
   background_image text,
+  elements         jsonb not null default '[]'::jsonb,
   updated_at       timestamptz not null default now(),
   unique (user_id, template_id)
 );

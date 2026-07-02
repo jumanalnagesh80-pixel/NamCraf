@@ -1,9 +1,11 @@
-import { CATEGORIES, TOTAL_TEMPLATE_COUNT, formatCount } from "~/lib/templates";
+import { TOTAL_TEMPLATE_COUNT, formatCount } from "~/lib/templates";
+import { TOTAL_GRAPHICS_COUNT } from "~/lib/graphics";
+import { FONTS } from "~/lib/fonts";
 
 const STATS = [
   { value: formatCount(TOTAL_TEMPLATE_COUNT), label: "Templates" },
-  { value: `${CATEGORIES.length}`, label: "Categories" },
-  { value: "190+", label: "Countries" },
+  { value: formatCount(TOTAL_GRAPHICS_COUNT), label: "Graphics & shapes" },
+  { value: `${FONTS.length}+`, label: "Fonts · all languages" },
   { value: "4.9★", label: "Avg. rating" },
 ];
 

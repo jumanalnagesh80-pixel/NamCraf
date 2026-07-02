@@ -15,7 +15,9 @@ Built with a playful, hand-crafted "postage stamp" design system.
 - **Templates library** (`/templates`) — 40+ templates across 1:1, 3:4, 4:5 and 16:9 ratios,
   with category / ratio / sort filters and a URL-synced search bar. Favorite + Use on each card.
 - **Live editor** (`/templates/$id`) — edit headline & tagline, switch palettes, toggle
-  light/dark text, pick fonts, resize the headline, upload a background image, and export to
+  light/dark text, pick from **multilingual fonts** (Latin, Devanagari, Arabic, CJK, Cyrillic,
+  Thai, Hebrew, Tamil, Bengali…), resize the headline, add **shapes & emoji stickers** you can
+  drag/resize/rotate/recolor on the canvas, upload a background image, and export to
   **PNG / SVG** via `html-to-image`. Print + native share. Save to the cloud (signed in) or
   `localStorage` (guests).
 - **Auth & profile** — email/password + Google OAuth, header user menu, `/auth` and

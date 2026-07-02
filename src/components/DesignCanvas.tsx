@@ -1,8 +1,9 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
-import type { DesignState } from "~/lib/designStore";
+import type { DesignState, DesignElement } from "~/lib/designStore";
 import { getPalette } from "~/lib/palettes";
 import { getFont } from "~/lib/fonts";
 import { ratioToNumber, type AspectRatio } from "~/lib/templates";
+import { ShapeGraphic } from "./ShapeGraphic";
 
 /** The design is authored at this base resolution; everything scales from it so
  *  on-screen previews and exports stay pixel-consistent. */
@@ -16,6 +17,11 @@ interface DesignCanvasProps {
   className?: string;
   /** rounded corners on the visible frame (exports are never rounded) */
   rounded?: boolean;
+  /** enable element selection + drag (editor only) */
+  editable?: boolean;
+  selectedId?: string | null;
+  onSelectElement?: (id: string | null) => void;
+  onElementChange?: (id: string, patch: Partial<DesignElement>) => void;
 }
 
 /**
@@ -24,9 +30,24 @@ interface DesignCanvasProps {
  * stage node, so `html-to-image` captures it at full BASE_WIDTH resolution.
  */
 export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
-  function DesignCanvas({ ratio, design, eyebrow = "NAMCRAFT", className = "", rounded = true }, exportRef) {
+  function DesignCanvas(
+    {
+      ratio,
+      design,
+      eyebrow = "NAMCRAFT",
+      className = "",
+      rounded = true,
+      editable = false,
+      selectedId = null,
+      onSelectElement,
+      onElementChange,
+    },
+    exportRef,
+  ) {
     const frameRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(0.3);
+    const scaleRef = useRef(scale);
+    scaleRef.current = scale;
 
     const ratioNum = ratioToNumber(ratio);
     const baseHeight = Math.round(BASE_WIDTH / ratioNum);
@@ -46,8 +67,31 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
     const textColor = design.darkText ? palette.textDark : palette.textLight;
     const taglineSize = Math.max(18, Math.round(design.headlineSize * 0.34));
     const pad = Math.round(BASE_WIDTH * 0.067);
-
     const hasImage = Boolean(design.backgroundImage);
+    const elements = design.elements ?? [];
+
+    function startDrag(e: React.PointerEvent, el: DesignElement) {
+      if (!editable) return;
+      e.stopPropagation();
+      onSelectElement?.(el.id);
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const origX = el.x;
+      const origY = el.y;
+      const move = (ev: PointerEvent) => {
+        const s = scaleRef.current || 1;
+        onElementChange?.(el.id, {
+          x: origX + (ev.clientX - startX) / s,
+          y: origY + (ev.clientY - startY) / s,
+        });
+      };
+      const up = () => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+      };
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+    }
 
     return (
       <div
@@ -185,6 +229,46 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
                   namcraft.studio
                 </span>
               </div>
+            </div>
+
+            {/* Graphic elements layer (shapes + stickers) */}
+            <div
+              style={{ position: "absolute", inset: 0, pointerEvents: editable ? "auto" : "none" }}
+              onPointerDown={(e) => {
+                if (editable && e.target === e.currentTarget) onSelectElement?.(null);
+              }}
+            >
+              {elements.map((el) => {
+                const selected = editable && selectedId === el.id;
+                return (
+                  <div
+                    key={el.id}
+                    onPointerDown={(e) => startDrag(e, el)}
+                    style={{
+                      position: "absolute",
+                      left: el.x,
+                      top: el.y,
+                      width: el.size,
+                      height: el.size,
+                      transform: `rotate(${el.rotation}deg)`,
+                      cursor: editable ? "move" : "default",
+                      outline: selected ? "4px solid #ffffff" : "none",
+                      outlineOffset: 6,
+                      boxShadow: selected ? "0 0 0 8px rgba(46,75,199,0.5)" : "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      userSelect: "none",
+                    }}
+                  >
+                    {el.kind === "shape" && el.shape ? (
+                      <ShapeGraphic type={el.shape} color={el.color} size={el.size} />
+                    ) : (
+                      <span style={{ fontSize: el.size, lineHeight: 1 }}>{el.emoji}</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

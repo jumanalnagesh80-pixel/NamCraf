@@ -7,6 +7,7 @@ import { StatsBand } from "~/components/home/StatsBand";
 import { BrandsMarquee } from "~/components/home/BrandsMarquee";
 import { CategoryChips } from "~/components/home/CategoryChips";
 import { SparkGrid } from "~/components/home/SparkGrid";
+import { GraphicsShowcase } from "~/components/home/GraphicsShowcase";
 import { HowItWorks } from "~/components/home/HowItWorks";
 import { AiTools } from "~/components/home/AiTools";
 import { FeaturesSection } from "~/components/home/FeaturesSection";
@@ -36,6 +37,7 @@ function Home() {
       <BrandsMarquee />
       <CategoryChips />
       <SparkGrid />
+      <GraphicsShowcase />
       <HowItWorks />
       <AiTools />
       <Marquee />

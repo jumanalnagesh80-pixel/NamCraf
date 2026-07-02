@@ -54,5 +54,6 @@ export interface TemplateDesignRow {
   dark_text: boolean;
   headline_size: number;
   background_image: string | null;
+  elements: unknown | null;
   updated_at: string;
 }

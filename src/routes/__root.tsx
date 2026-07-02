@@ -7,6 +7,7 @@ import {
 import type { ReactNode } from "react";
 import appCss from "~/styles.css?url";
 import { seo, SITE_NAME, SITE_URL, OG_IMAGE } from "~/lib/seo";
+import { GOOGLE_FONTS_HREF } from "~/lib/fonts";
 import { themeInitScript, ThemeProvider } from "~/hooks/useTheme";
 import { AuthProvider } from "~/hooks/useAuth";
 import { FavoritesProvider } from "~/hooks/useFavorites";
@@ -74,7 +75,7 @@ export const Route = createRootRoute({
         },
         {
           rel: "stylesheet",
-          href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@500;700;900&display=swap",
+          href: GOOGLE_FONTS_HREF,
         },
         // NOTE: canonical is intentionally omitted here. Each leaf route emits
         // its own self-referencing canonical via seo(), and TanStack does not

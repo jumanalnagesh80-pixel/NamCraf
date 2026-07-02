@@ -3,12 +3,14 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { toPng, toSvg } from "html-to-image";
 import { seo } from "~/lib/seo";
 import { SiteLayout } from "~/components/SiteLayout";
-import { DesignCanvas } from "~/components/DesignCanvas";
+import { DesignCanvas, BASE_WIDTH } from "~/components/DesignCanvas";
+import { ShapeGraphic } from "~/components/ShapeGraphic";
 import { FavoriteButton } from "~/components/FavoriteButton";
 import { Button } from "~/components/ui/Button";
-import { PALETTES } from "~/lib/palettes";
-import { FONTS } from "~/lib/fonts";
-import { categoryLabel, getTemplate } from "~/lib/templates";
+import { PALETTES, getPalette } from "~/lib/palettes";
+import { fontsByLanguage, getFont } from "~/lib/fonts";
+import { SHAPES, STICKER_SETS, type ShapeType } from "~/lib/graphics";
+import { categoryLabel, getTemplate, ratioToNumber } from "~/lib/templates";
 import {
   defaultDesign,
   loadLocalDesign,
@@ -16,9 +18,18 @@ import {
   loadCloudDesign,
   saveCloudDesign,
   type DesignState,
+  type DesignElement,
 } from "~/lib/designStore";
 import { useAuth } from "~/hooks/useAuth";
 import { cn } from "~/lib/utils";
+
+const SHAPE_COLORS = ["#2E4BC7", "#F26E86", "#F7D94C", "#FBF5E9", "#1E2340", "#3FBFA0", "#FFFFFF"];
+
+function uid() {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `el-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+}
 
 export const Route = createFileRoute("/templates/$id")({
   loader: ({ params }) => {
@@ -61,6 +72,65 @@ function EditorPage() {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [busy, setBusy] = useState<null | "png" | "svg">(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [stickerSet, setStickerSet] = useState(STICKER_SETS[0].id);
+
+  const baseHeight = Math.round(BASE_WIDTH / ratioToNumber(template.ratio));
+  const selectedEl = design.elements.find((e) => e.id === selectedId) ?? null;
+
+  const setElements = (updater: (els: DesignElement[]) => DesignElement[]) =>
+    setDesign((d) => ({ ...d, elements: updater(d.elements) }));
+
+  const onElementChange = (id: string, patch: Partial<DesignElement>) =>
+    setElements((els) => els.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+
+  function addShape(shape: ShapeType) {
+    const id = uid();
+    const size = Math.round(BASE_WIDTH * 0.18);
+    setElements((els) => [
+      ...els,
+      {
+        id,
+        kind: "shape",
+        shape,
+        x: BASE_WIDTH / 2 - size / 2,
+        y: baseHeight / 2 - size / 2,
+        size,
+        color: getPalette(design.paletteId).accent,
+        rotation: 0,
+      },
+    ]);
+    setSelectedId(id);
+  }
+
+  function addSticker(emoji: string) {
+    const id = uid();
+    const size = Math.round(BASE_WIDTH * 0.14);
+    setElements((els) => [
+      ...els,
+      { id, kind: "sticker", emoji, x: BASE_WIDTH / 2 - size / 2, y: baseHeight / 2 - size / 2, size, color: "#000", rotation: 0 },
+    ]);
+    setSelectedId(id);
+  }
+
+  function removeSelected() {
+    if (!selectedId) return;
+    setElements((els) => els.filter((e) => e.id !== selectedId));
+    setSelectedId(null);
+  }
+
+  function reorderSelected(dir: "front" | "back") {
+    if (!selectedId) return;
+    setElements((els) => {
+      const idx = els.findIndex((e) => e.id === selectedId);
+      if (idx < 0) return els;
+      const copy = [...els];
+      const [item] = copy.splice(idx, 1);
+      if (dir === "front") copy.push(item);
+      else copy.unshift(item);
+      return copy;
+    });
+  }
 
   // Restore a previously saved design (cloud when signed in, else local).
   useEffect(() => {
@@ -111,6 +181,14 @@ function EditorPage() {
     setTimeout(() => setSaveState("idle"), 2500);
   }
 
+  // Clear the selection ring before rasterizing so it isn't captured.
+  async function deselectForCapture() {
+    setSelectedId(null);
+    await new Promise((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => r(null))),
+    );
+  }
+
   function fileName(ext: string) {
     const slug = (design.headline || template.title)
       .toLowerCase()
@@ -123,6 +201,7 @@ function EditorPage() {
   async function download(kind: "png" | "svg") {
     if (!exportRef.current) return;
     setBusy(kind);
+    await deselectForCapture();
     try {
       const options = { pixelRatio: 2, cacheBust: true, backgroundColor: "#ffffff" };
       const dataUrl =
@@ -142,6 +221,7 @@ function EditorPage() {
 
   async function handlePrint() {
     if (!exportRef.current) return;
+    await deselectForCapture();
     try {
       const dataUrl = await toPng(exportRef.current, { pixelRatio: 2, cacheBust: true });
       const w = window.open("", "_blank");
@@ -157,6 +237,7 @@ function EditorPage() {
 
   async function handleShare() {
     if (!exportRef.current) return;
+    await deselectForCapture();
     try {
       const dataUrl = await toPng(exportRef.current, { pixelRatio: 2, cacheBust: true });
       const blob = await (await fetch(dataUrl)).blob();
@@ -217,8 +298,17 @@ function EditorPage() {
                   ratio={template.ratio}
                   design={design}
                   eyebrow={categoryLabel(template.category)}
+                  editable
+                  selectedId={selectedId}
+                  onSelectElement={setSelectedId}
+                  onElementChange={onElementChange}
                 />
               </div>
+              {design.elements.length > 0 && (
+                <p className="text-muted-foreground mt-3 text-center text-xs">
+                  Tip: tap a shape or sticker to select it, then drag to move it.
+                </p>
+              )}
             </div>
 
             {/* Export bar */}
@@ -321,27 +411,155 @@ function EditorPage() {
               </div>
             </Panel>
 
-            <Panel title="Font">
-              <div className="grid gap-2">
-                {FONTS.map((f) => (
+            <Panel title="Font · all languages">
+              <select
+                value={design.fontId}
+                onChange={(e) => update("fontId", e.target.value)}
+                className="editor-input"
+                aria-label="Font family"
+              >
+                {fontsByLanguage().map((group) => (
+                  <optgroup key={group.lang} label={group.lang}>
+                    {group.fonts.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              <p
+                className="border-border mt-3 truncate rounded-xl border px-3 py-3 text-center text-xl"
+                style={{ fontFamily: getFont(design.fontId).stack }}
+              >
+                {design.headline || "Aa · अ · ع · あ · 한"}
+              </p>
+            </Panel>
+
+            <Panel title="Elements · shapes & stickers">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Shapes
+              </div>
+              <div className="grid grid-cols-6 gap-2">
+                {SHAPES.map((s) => (
                   <button
-                    key={f.id}
+                    key={s.id}
                     type="button"
-                    onClick={() => update("fontId", f.id)}
-                    aria-pressed={design.fontId === f.id}
-                    className={cn(
-                      "rounded-xl border px-3 py-2 text-left text-sm transition",
-                      design.fontId === f.id
-                        ? "border-primary bg-muted"
-                        : "border-border hover:bg-muted",
-                    )}
-                    style={{ fontFamily: f.stack }}
+                    onClick={() => addShape(s.id)}
+                    title={s.name}
+                    aria-label={`Add ${s.name}`}
+                    className="border-border hover:bg-muted hover:border-primary flex aspect-square items-center justify-center rounded-lg border p-1.5 transition"
                   >
-                    {f.name}
+                    <ShapeGraphic type={s.id} color="currentColor" size={26} />
                   </button>
                 ))}
               </div>
+
+              <div className="mt-5 mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Stickers
+              </div>
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {STICKER_SETS.map((set) => (
+                  <button
+                    key={set.id}
+                    type="button"
+                    onClick={() => setStickerSet(set.id)}
+                    className={cn(
+                      "rounded-full border px-2.5 py-1 text-xs font-medium transition",
+                      stickerSet === set.id
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border hover:bg-muted",
+                    )}
+                  >
+                    {set.label}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-6 gap-1.5">
+                {(STICKER_SETS.find((s) => s.id === stickerSet) ?? STICKER_SETS[0]).emoji.map(
+                  (emoji, i) => (
+                    <button
+                      key={`${emoji}-${i}`}
+                      type="button"
+                      onClick={() => addSticker(emoji)}
+                      className="hover:bg-muted rounded-lg py-1.5 text-2xl transition"
+                      aria-label="Add sticker"
+                    >
+                      {emoji}
+                    </button>
+                  ),
+                )}
+              </div>
             </Panel>
+
+            {selectedEl && (
+              <Panel title="Selected element">
+                <Field label={`Size — ${Math.round(selectedEl.size)}px`}>
+                  <input
+                    type="range"
+                    min={40}
+                    max={640}
+                    value={selectedEl.size}
+                    onChange={(e) => onElementChange(selectedEl.id, { size: Number(e.target.value) })}
+                    className="accent-primary w-full"
+                  />
+                </Field>
+                <Field label={`Rotation — ${Math.round(selectedEl.rotation)}°`}>
+                  <input
+                    type="range"
+                    min={0}
+                    max={360}
+                    value={selectedEl.rotation}
+                    onChange={(e) =>
+                      onElementChange(selectedEl.id, { rotation: Number(e.target.value) })
+                    }
+                    className="accent-primary w-full"
+                  />
+                </Field>
+
+                {selectedEl.kind === "shape" && (
+                  <div>
+                    <span className="text-muted-foreground mb-1.5 block text-sm font-medium">
+                      Color
+                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {SHAPE_COLORS.map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => onElementChange(selectedEl.id, { color: c })}
+                          aria-label={`Color ${c}`}
+                          className={cn(
+                            "h-7 w-7 rounded-full border-2 transition",
+                            selectedEl.color === c ? "border-primary scale-110" : "border-border",
+                          )}
+                          style={{ background: c }}
+                        />
+                      ))}
+                      <input
+                        type="color"
+                        value={selectedEl.color}
+                        onChange={(e) => onElementChange(selectedEl.id, { color: e.target.value })}
+                        className="h-7 w-9 cursor-pointer rounded border-0 bg-transparent p-0"
+                        aria-label="Custom color"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Button size="sm" variant="outline" onClick={() => reorderSelected("front")}>
+                    ⬆ Front
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => reorderSelected("back")}>
+                    ⬇ Back
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={removeSelected}>
+                    🗑 Delete
+                  </Button>
+                </div>
+              </Panel>
+            )}
 
             <Panel title="Background image">
               <label className="border-border hover:bg-muted flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-6 text-sm font-medium transition">
