@@ -53,6 +53,26 @@ export function bgFilterCss(f: BgFilters | undefined): string {
   return `brightness(${x.brightness}%) contrast(${x.contrast}%) saturate(${x.saturate}%) blur(${x.blur}px) grayscale(${x.grayscale}%)`;
 }
 
+/** One-tap photo looks (built from the same adjustments). */
+export interface FilterPreset {
+  id: string;
+  name: string;
+  filters: BgFilters;
+}
+
+export const FILTER_PRESETS: FilterPreset[] = [
+  { id: "original", name: "Original", filters: { brightness: 100, contrast: 100, saturate: 100, blur: 0, grayscale: 0 } },
+  { id: "vivid", name: "Vivid", filters: { brightness: 106, contrast: 118, saturate: 145, blur: 0, grayscale: 0 } },
+  { id: "warm", name: "Warm", filters: { brightness: 106, contrast: 102, saturate: 128, blur: 0, grayscale: 0 } },
+  { id: "cool", name: "Cool", filters: { brightness: 100, contrast: 106, saturate: 88, blur: 0, grayscale: 0 } },
+  { id: "fade", name: "Fade", filters: { brightness: 116, contrast: 84, saturate: 82, blur: 0, grayscale: 0 } },
+  { id: "vintage", name: "Vintage", filters: { brightness: 108, contrast: 92, saturate: 76, blur: 0, grayscale: 18 } },
+  { id: "mono", name: "Mono", filters: { brightness: 104, contrast: 108, saturate: 0, blur: 0, grayscale: 100 } },
+  { id: "noir", name: "Noir", filters: { brightness: 92, contrast: 135, saturate: 0, blur: 0, grayscale: 100 } },
+  { id: "dreamy", name: "Dreamy", filters: { brightness: 110, contrast: 94, saturate: 112, blur: 2, grayscale: 0 } },
+  { id: "sharp", name: "Sharp", filters: { brightness: 100, contrast: 125, saturate: 110, blur: 0, grayscale: 0 } },
+];
+
 export interface DesignState {
   headline: string;
   tagline: string;

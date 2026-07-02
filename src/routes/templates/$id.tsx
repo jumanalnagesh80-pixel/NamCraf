@@ -15,6 +15,7 @@ import { categoryLabel, getTemplate, ratioToNumber } from "~/lib/templates";
 import {
   defaultDesign,
   defaultBgFilters,
+  FILTER_PRESETS,
   loadLocalDesign,
   saveLocalDesign,
   loadCloudDesign,
@@ -1006,6 +1007,35 @@ function EditorPage() {
                   </button>
 
                   <div className="mt-4 space-y-4">
+                    <div>
+                      <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Filters
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {FILTER_PRESETS.map((preset) => {
+                          const active =
+                            JSON.stringify(bgFilters) === JSON.stringify(preset.filters);
+                          return (
+                            <button
+                              key={preset.id}
+                              type="button"
+                              onClick={() =>
+                                setDesign((d) => ({ ...d, bgFilters: { ...preset.filters } }))
+                              }
+                              className={cn(
+                                "rounded-full border px-3 py-1.5 text-xs font-medium transition",
+                                active
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-border hover:bg-muted",
+                              )}
+                            >
+                              {preset.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         Adjust
