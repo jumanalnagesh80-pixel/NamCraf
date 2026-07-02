@@ -41,22 +41,23 @@ export function Hero() {
         <div className="text-center lg:text-left">
           <span className="glass shadow-soft mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold">
             <StampLogo size={22} />
-            <span className="text-gradient-neon">{formatLakh(TOTAL_TEMPLATE_COUNT)} templates</span>
-            <span className="text-muted-foreground">· AI-powered studio</span>
+            <span className="text-gradient-neon">100% free</span>
+            <span className="text-muted-foreground">· {formatLakh(TOTAL_TEMPLATE_COUNT)} templates · no signup</span>
           </span>
 
           <h1 className="font-display text-5xl font-black leading-[1.02] tracking-tight sm:text-7xl">
-            Design{" "}
-            <span className="hand-underline text-gradient-neon animate-gradient-move">anything</span>
+            The free online
             <br />
-            at the speed of thought
+            tool to design{" "}
+            <span className="hand-underline text-gradient-neon animate-gradient-move">anything</span>
           </h1>
 
           <p className="text-muted-foreground mx-auto mt-6 max-w-xl text-lg lg:mx-0">
-            A next-gen design studio in your browser. Search{" "}
+            NAMCRAFT is a{" "}
+            <span className="text-foreground font-semibold">free-to-use online graphic design tool</span>.
+            Search{" "}
             <span className="text-foreground font-semibold">{formatCount(TOTAL_TEMPLATE_COUNT)}</span>{" "}
-            templates, remix them live, and export in seconds — powered by a playful, hand-crafted
-            design system.
+            templates, remix them live, and export in seconds — no download, no signup required.
           </p>
 
           {/* Glass search */}

@@ -6,6 +6,29 @@
 import { getSupabase, type TemplateDesignRow } from "./supabase";
 import { DEFAULT_PALETTE_ID } from "./palettes";
 import { DEFAULT_FONT_ID } from "./fonts";
+import type { ShapeType } from "./graphics";
+
+/** A graphic element (shape or sticker) placed on the canvas. Positions are in
+ *  the design's base coordinate space (see BASE_WIDTH in DesignCanvas). */
+export interface DesignElement {
+  id: string;
+  kind: "shape" | "sticker" | "text";
+  shape?: ShapeType;
+  emoji?: string;
+  /** text content when kind === "text" */
+  text?: string;
+  /** font id for text elements (falls back to the design font) */
+  fontId?: string;
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+  rotation: number;
+  /** 0..1, defaults to 1 */
+  opacity?: number;
+  /** mirror horizontally */
+  flipH?: boolean;
+}
 
 export interface DesignState {
   headline: string;
@@ -15,6 +38,7 @@ export interface DesignState {
   darkText: boolean;
   headlineSize: number; // px at the design's base resolution
   backgroundImage: string | null; // data URL or remote URL
+  elements: DesignElement[];
 }
 
 export function defaultDesign(overrides: Partial<DesignState> = {}): DesignState {
@@ -26,8 +50,15 @@ export function defaultDesign(overrides: Partial<DesignState> = {}): DesignState
     darkText: false,
     headlineSize: 64,
     backgroundImage: null,
+    elements: [],
     ...overrides,
   };
+}
+
+/** Normalize a loaded design so older saves (without `elements`) stay valid. */
+function normalize(design: Partial<DesignState> | null): DesignState | null {
+  if (!design) return null;
+  return { ...defaultDesign(), ...design, elements: design.elements ?? [] };
 }
 
 const LS_PREFIX = "namcraft:design:";
@@ -42,7 +73,7 @@ export function loadLocalDesign(templateId: string): DesignState | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(lsKey(templateId));
-    return raw ? (JSON.parse(raw) as DesignState) : null;
+    return raw ? normalize(JSON.parse(raw) as Partial<DesignState>) : null;
   } catch {
     return null;
   }
@@ -64,8 +95,10 @@ export function listLocalDesigns(): { templateId: string; design: DesignState }[
     const key = window.localStorage.key(i);
     if (key?.startsWith(LS_PREFIX)) {
       try {
-        const design = JSON.parse(window.localStorage.getItem(key) as string) as DesignState;
-        out.push({ templateId: key.slice(LS_PREFIX.length), design });
+        const design = normalize(
+          JSON.parse(window.localStorage.getItem(key) as string) as Partial<DesignState>,
+        );
+        if (design) out.push({ templateId: key.slice(LS_PREFIX.length), design });
       } catch {
         /* skip corrupt entry */
       }
@@ -85,6 +118,7 @@ function rowToDesign(row: TemplateDesignRow): DesignState {
     darkText: row.dark_text,
     headlineSize: row.headline_size,
     backgroundImage: row.background_image,
+    elements: (row.elements as DesignElement[] | null) ?? [],
   };
 }
 
@@ -122,6 +156,7 @@ export async function saveCloudDesign(
       dark_text: design.darkText,
       headline_size: design.headlineSize,
       background_image: design.backgroundImage,
+      elements: design.elements,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id,template_id" },

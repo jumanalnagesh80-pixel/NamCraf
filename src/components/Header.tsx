@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { BrandMark } from "./StampLogo";
 import { ThemeToggle } from "./ThemeToggle";
 import { UserMenu } from "./UserMenu";
+import { openCommandPalette } from "./CommandPalette";
 
 const NAV = [
   { to: "/templates", label: "Templates" },
@@ -35,6 +36,16 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={openCommandPalette}
+            className="glass text-muted-foreground hover:text-foreground hidden items-center gap-2 rounded-full px-3 py-2 text-sm transition lg:flex"
+            aria-label="Open command palette"
+          >
+            <span aria-hidden="true">🔍</span>
+            <span>Search</span>
+            <kbd className="border-border rounded border px-1.5 py-0.5 text-[0.65rem]">⌘K</kbd>
+          </button>
           <ThemeToggle className="hidden sm:flex" />
           <div className="hidden sm:block">
             <UserMenu />

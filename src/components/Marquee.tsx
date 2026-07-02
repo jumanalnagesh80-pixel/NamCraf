@@ -1,5 +1,9 @@
 const DEFAULT_ITEMS = [
   "3M+ Templates",
+  "3 Lakh+ Graphics",
+  "Shapes",
+  "Stickers",
+  "All Languages",
   "Logos",
   "Posters",
   "Social Posts",
@@ -8,10 +12,6 @@ const DEFAULT_ITEMS = [
   "Flyers",
   "Instagram",
   "Résumés",
-  "Brand Kits",
-  "Menus",
-  "Invitations",
-  "Banners",
   "AI Tools",
 ];
 

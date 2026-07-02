@@ -18,6 +18,7 @@ import { Route as AuthRouteImport } from "./routes/auth";
 import { Route as FavoritesRouteImport } from "./routes/favorites";
 import { Route as TemplatesIndexRouteImport } from "./routes/templates/index";
 import { Route as TemplatesIdRouteImport } from "./routes/templates/$id";
+import { Route as CategorySlugRouteImport } from "./routes/category/$slug";
 
 const IndexRoute = IndexRouteImport.update({
   id: "/",
@@ -52,6 +53,12 @@ const TemplatesIndexRoute = TemplatesIndexRouteImport.update({
 const TemplatesIdRoute = TemplatesIdRouteImport.update({
   id: "/templates/$id",
   path: "/templates/$id",
+  getParentRoute: () => rootRouteImport,
+} as any);
+
+const CategorySlugRoute = CategorySlugRouteImport.update({
+  id: "/category/$slug",
+  path: "/category/$slug",
   getParentRoute: () => rootRouteImport,
 } as any);
 
@@ -99,6 +106,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof TemplatesIdRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/category/$slug": {
+      id: "/category/$slug";
+      path: "/category/$slug";
+      fullPath: "/category/$slug";
+      preLoaderRoute: typeof CategorySlugRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
@@ -109,6 +123,7 @@ const rootRouteChildren = {
   FavoritesRoute,
   TemplatesIndexRoute,
   TemplatesIdRoute,
+  CategorySlugRoute,
 };
 
 export const routeTree = rootRouteImport

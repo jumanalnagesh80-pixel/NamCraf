@@ -1,8 +1,8 @@
 # 🎨 NAMCRAFT Graphic Studio
 
-A Canva-inspired design platform for **NAMCRAFT Graphic Studio** — browse studio-crafted
-templates, remix them in a live editor, and export as PNG or SVG. Built with a playful,
-hand-crafted "postage stamp" design system.
+A **free-to-use online graphic design tool**. Browse millions of studio-crafted
+templates, remix them in a live editor, and export as PNG or SVG — no download, no signup.
+Built with a playful, hand-crafted "postage stamp" design system.
 
 > Palette extracted from the NAMCRAFT logo: **stamp blue**, **blossom pink**,
 > **lemon yellow**, on a **warm cream** background (deep berry in dark mode).
@@ -15,7 +15,9 @@ hand-crafted "postage stamp" design system.
 - **Templates library** (`/templates`) — 40+ templates across 1:1, 3:4, 4:5 and 16:9 ratios,
   with category / ratio / sort filters and a URL-synced search bar. Favorite + Use on each card.
 - **Live editor** (`/templates/$id`) — edit headline & tagline, switch palettes, toggle
-  light/dark text, pick fonts, resize the headline, upload a background image, and export to
+  light/dark text, pick from **multilingual fonts** (Latin, Devanagari, Arabic, CJK, Cyrillic,
+  Thai, Hebrew, Tamil, Bengali…), resize the headline, add **shapes & emoji stickers** you can
+  drag/resize/rotate/recolor on the canvas, upload a background image, and export to
   **PNG / SVG** via `html-to-image`. Print + native share. Save to the cloud (signed in) or
   `localStorage` (guests).
 - **Auth & profile** — email/password + Google OAuth, header user menu, `/auth` and
@@ -101,3 +103,24 @@ export const ServerRoute = createServerFileRoute().methods({
 
 > The exact server-route API (`createServerFileRoute`) can vary between TanStack Start
 > versions — check the docs for the version pinned in `package.json` if you adopt this.
+
+
+## 🪄 Brand logo
+
+The company logo lives at [`public/logo-namcraft.svg`](./public/logo-namcraft.svg) — a scalable
+SVG recreation of the NAMCRAFT scalloped-stamp mark (blue stamp, pink `NAM CRAFT` wordmark,
+daisy accent, `GRAPHIC STUDIO` tagline). It's used in the header (`LogoMark` in
+`src/components/StampLogo.tsx`) and footer, with a matching `public/favicon.svg`.
+
+Prefer a pixel-exact raster? Drop your file at `public/logo-namcraft.png` and point `LogoMark`
+at `/logo-namcraft.png` instead.
+
+
+## 📲 Installable PWA (offline)
+
+NAMCRAFT is a Progressive Web App: a web manifest (`public/manifest.webmanifest`) makes it
+installable to a phone home screen or desktop, and a service worker (`public/sw.js`) caches
+the app shell + static assets for fast repeat visits and basic offline use. The worker is
+registered in production only (see `src/components/RegisterSW.tsx`) so it never interferes with
+the Vite dev server. Cross-origin requests (Google Fonts, Supabase) are intentionally not
+intercepted.

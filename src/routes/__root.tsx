@@ -7,9 +7,12 @@ import {
 import type { ReactNode } from "react";
 import appCss from "~/styles.css?url";
 import { seo, SITE_NAME, SITE_URL, OG_IMAGE } from "~/lib/seo";
+import { GOOGLE_FONTS_HREF } from "~/lib/fonts";
 import { themeInitScript, ThemeProvider } from "~/hooks/useTheme";
 import { AuthProvider } from "~/hooks/useAuth";
 import { FavoritesProvider } from "~/hooks/useFavorites";
+import { ToastProvider } from "~/components/ui/Toast";
+import { RegisterSW } from "~/components/RegisterSW";
 import { DefaultCatchBoundary } from "~/components/DefaultCatchBoundary";
 import { NotFound } from "~/components/NotFound";
 
@@ -21,12 +24,35 @@ const orgJsonLd = {
   logo: `${SITE_URL}/favicon.svg`,
   image: OG_IMAGE,
   description:
-    "A playful, hand-crafted design platform. Browse studio templates and remix them in a live editor.",
+    "A free-to-use online graphic design tool. Browse 3M+ templates and remix them in a live editor.",
   sameAs: [
     "https://instagram.com/namcraft.studio",
     "https://twitter.com/namcraft",
     "https://dribbble.com/namcraft",
   ],
+};
+
+const appJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: SITE_NAME,
+  url: SITE_URL,
+  applicationCategory: "DesignApplication",
+  operatingSystem: "Web browser",
+  browserRequirements: "Requires JavaScript. Works in any modern browser.",
+  description:
+    "A free-to-use online graphic design tool. Create logos, posters, social posts, presentations, résumés and more from 3M+ templates — no download or signup required.",
+  image: OG_IMAGE,
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: "4.9",
+    ratingCount: "2140",
+  },
 };
 
 export const Route = createRootRoute({
@@ -37,12 +63,17 @@ export const Route = createRootRoute({
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
         { name: "theme-color", content: "#2E4BC7" },
+        { name: "mobile-web-app-capable", content: "yes" },
+        { name: "apple-mobile-web-app-capable", content: "yes" },
+        { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+        { name: "apple-mobile-web-app-title", content: "NAMCRAFT" },
         ...base.meta,
       ],
       links: [
         { rel: "stylesheet", href: appCss },
         { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
         { rel: "apple-touch-icon", href: "/favicon.svg" },
+        { rel: "manifest", href: "/manifest.webmanifest" },
         { rel: "preconnect", href: "https://fonts.googleapis.com" },
         {
           rel: "preconnect",
@@ -51,7 +82,7 @@ export const Route = createRootRoute({
         },
         {
           rel: "stylesheet",
-          href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@500;700;900&display=swap",
+          href: GOOGLE_FONTS_HREF,
         },
         // NOTE: canonical is intentionally omitted here. Each leaf route emits
         // its own self-referencing canonical via seo(), and TanStack does not
@@ -78,7 +109,10 @@ function RootComponent() {
       <ThemeProvider>
         <AuthProvider>
           <FavoritesProvider>
-            <Outlet />
+            <ToastProvider>
+              <RegisterSW />
+              <Outlet />
+            </ToastProvider>
           </FavoritesProvider>
         </AuthProvider>
       </ThemeProvider>
@@ -96,6 +130,11 @@ function RootDocument({ children }: { children: ReactNode }) {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+        />
+        {/* JSON-LD WebApplication schema (free online design tool) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }}
         />
         <HeadContent />
       </head>

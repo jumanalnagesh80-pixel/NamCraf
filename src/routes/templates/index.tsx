@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { seo } from "~/lib/seo";
 import { SiteLayout } from "~/components/SiteLayout";
@@ -115,6 +115,24 @@ function TemplatesLibrary() {
   }, [filterKey]);
   const shown = results.slice(0, visible);
   const remaining = results.length - shown.length;
+
+  // Auto-load more when the sentinel scrolls into view (true infinite scroll,
+  // with the Load-more button kept as a no-JS / accessible fallback).
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || remaining <= 0) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisible((v) => v + PAGE_SIZE);
+        }
+      },
+      { rootMargin: "600px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [remaining, filterKey]);
 
   return (
     <SiteLayout>
@@ -242,7 +260,7 @@ function TemplatesLibrary() {
             </div>
 
             {remaining > 0 && (
-              <div className="mt-10 flex flex-col items-center gap-3">
+              <div ref={sentinelRef} className="mt-10 flex flex-col items-center gap-3">
                 <p className="text-muted-foreground text-sm">
                   Showing {shown.length.toLocaleString()} of {results.length.toLocaleString()}
                 </p>

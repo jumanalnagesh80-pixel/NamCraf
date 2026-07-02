@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { StampLogo } from "./StampLogo";
+import { LogoMark } from "./StampLogo";
 
 const COLUMNS: { title: string; links: { label: string; to: string; hash?: string }[] }[] = [
   {
@@ -38,9 +38,9 @@ export function Footer() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div>
           <Link to="/" className="flex items-center gap-2.5" aria-label="NAMCRAFT home">
-            <StampLogo size={40} />
+            <LogoMark size={44} />
             <span className="font-display text-lg font-black tracking-tight">
-              NAM<span className="text-gradient-stamp">CRAFT</span>
+              NAM<span className="text-gradient-neon">CRAFT</span>
             </span>
           </Link>
           <p className="text-muted-foreground mt-4 max-w-xs text-sm">

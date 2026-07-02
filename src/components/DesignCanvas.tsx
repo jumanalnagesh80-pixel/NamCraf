@@ -1,8 +1,9 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
-import type { DesignState } from "~/lib/designStore";
+import type { DesignState, DesignElement } from "~/lib/designStore";
 import { getPalette } from "~/lib/palettes";
 import { getFont } from "~/lib/fonts";
 import { ratioToNumber, type AspectRatio } from "~/lib/templates";
+import { ShapeGraphic } from "./ShapeGraphic";
 
 /** The design is authored at this base resolution; everything scales from it so
  *  on-screen previews and exports stay pixel-consistent. */
@@ -16,6 +17,11 @@ interface DesignCanvasProps {
   className?: string;
   /** rounded corners on the visible frame (exports are never rounded) */
   rounded?: boolean;
+  /** enable element selection + drag (editor only) */
+  editable?: boolean;
+  selectedId?: string | null;
+  onSelectElement?: (id: string | null) => void;
+  onElementChange?: (id: string, patch: Partial<DesignElement>) => void;
 }
 
 /**
@@ -24,9 +30,25 @@ interface DesignCanvasProps {
  * stage node, so `html-to-image` captures it at full BASE_WIDTH resolution.
  */
 export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
-  function DesignCanvas({ ratio, design, eyebrow = "NAMCRAFT", className = "", rounded = true }, exportRef) {
+  function DesignCanvas(
+    {
+      ratio,
+      design,
+      eyebrow = "NAMCRAFT",
+      className = "",
+      rounded = true,
+      editable = false,
+      selectedId = null,
+      onSelectElement,
+      onElementChange,
+    },
+    exportRef,
+  ) {
     const frameRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(0.3);
+    const scaleRef = useRef(scale);
+    scaleRef.current = scale;
+    const [guides, setGuides] = useState<{ v: boolean; h: boolean }>({ v: false, h: false });
 
     const ratioNum = ratioToNumber(ratio);
     const baseHeight = Math.round(BASE_WIDTH / ratioNum);
@@ -46,8 +68,64 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
     const textColor = design.darkText ? palette.textDark : palette.textLight;
     const taglineSize = Math.max(18, Math.round(design.headlineSize * 0.34));
     const pad = Math.round(BASE_WIDTH * 0.067);
-
     const hasImage = Boolean(design.backgroundImage);
+    const elements = design.elements ?? [];
+
+    function startDrag(e: React.PointerEvent, el: DesignElement) {
+      if (!editable) return;
+      e.stopPropagation();
+      onSelectElement?.(el.id);
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const origX = el.x;
+      const origY = el.y;
+      // approximate box for snapping (text boxes size to content)
+      const w = el.kind === "text" ? el.size * 3 : el.size;
+      const h = el.kind === "text" ? el.size * 1.2 : el.size;
+      const T = 16;
+      const move = (ev: PointerEvent) => {
+        const s = scaleRef.current || 1;
+        let nx = origX + (ev.clientX - startX) / s;
+        let ny = origY + (ev.clientY - startY) / s;
+        let gv = false;
+        let gh = false;
+        if (Math.abs(nx + w / 2 - BASE_WIDTH / 2) < T) {
+          nx = BASE_WIDTH / 2 - w / 2;
+          gv = true;
+        }
+        if (Math.abs(ny + h / 2 - baseHeight / 2) < T) {
+          ny = baseHeight / 2 - h / 2;
+          gh = true;
+        }
+        setGuides({ v: gv, h: gh });
+        onElementChange?.(el.id, { x: nx, y: ny });
+      };
+      const up = () => {
+        setGuides({ v: false, h: false });
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+      };
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+    }
+
+    function startResize(e: React.PointerEvent, el: DesignElement) {
+      if (!editable) return;
+      e.stopPropagation();
+      const startX = e.clientX;
+      const origSize = el.size;
+      const move = (ev: PointerEvent) => {
+        const s = scaleRef.current || 1;
+        const next = Math.max(40, Math.min(900, origSize + (ev.clientX - startX) / s));
+        onElementChange?.(el.id, { size: next });
+      };
+      const up = () => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+      };
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+    }
 
     return (
       <div
@@ -186,6 +264,109 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
                 </span>
               </div>
             </div>
+
+            {/* Graphic elements layer (shapes + stickers) */}
+            <div
+              style={{ position: "absolute", inset: 0, pointerEvents: editable ? "auto" : "none" }}
+              onPointerDown={(e) => {
+                if (editable && e.target === e.currentTarget) onSelectElement?.(null);
+              }}
+            >
+              {elements.map((el) => {
+                const selected = editable && selectedId === el.id;
+                const isText = el.kind === "text";
+                const flip = el.flipH ? -1 : 1;
+                return (
+                  <div
+                    key={el.id}
+                    onPointerDown={(e) => startDrag(e, el)}
+                    style={{
+                      position: "absolute",
+                      left: el.x,
+                      top: el.y,
+                      width: isText ? "max-content" : el.size,
+                      height: isText ? "auto" : el.size,
+                      maxWidth: isText ? BASE_WIDTH * 0.9 : undefined,
+                      transform: `rotate(${el.rotation}deg) scaleX(${flip})`,
+                      opacity: el.opacity ?? 1,
+                      cursor: editable ? "move" : "default",
+                      outline: selected ? "4px solid #ffffff" : "none",
+                      outlineOffset: 6,
+                      boxShadow: selected ? "0 0 0 8px rgba(46,75,199,0.5)" : "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      userSelect: "none",
+                    }}
+                  >
+                    {el.kind === "shape" && el.shape ? (
+                      <ShapeGraphic type={el.shape} color={el.color} size={el.size} />
+                    ) : el.kind === "text" ? (
+                      <span
+                        style={{
+                          fontSize: el.size,
+                          lineHeight: 1.1,
+                          fontWeight: 800,
+                          color: el.color,
+                          fontFamily: getFont(el.fontId ?? design.fontId).stack,
+                          whiteSpace: "pre-wrap",
+                          textAlign: "center",
+                        }}
+                      >
+                        {el.text || "Text"}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: el.size, lineHeight: 1 }}>{el.emoji}</span>
+                    )}
+                    {selected && el.kind !== "text" && el.rotation === 0 && (
+                      <div
+                        onPointerDown={(e) => startResize(e, el)}
+                        title="Drag to resize"
+                        style={{
+                          position: "absolute",
+                          right: -13,
+                          bottom: -13,
+                          width: 26,
+                          height: 26,
+                          borderRadius: "50%",
+                          background: "#ffffff",
+                          border: "3px solid #2E4BC7",
+                          cursor: "nwse-resize",
+                        }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Center alignment guides (shown while dragging) */}
+            {guides.v && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: BASE_WIDTH / 2 - 1,
+                  top: 0,
+                  width: 2,
+                  height: baseHeight,
+                  background: "#F26E86",
+                  pointerEvents: "none",
+                }}
+              />
+            )}
+            {guides.h && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: baseHeight / 2 - 1,
+                  left: 0,
+                  height: 2,
+                  width: BASE_WIDTH,
+                  background: "#F26E86",
+                  pointerEvents: "none",
+                }}
+              />
+            )}
           </div>
         </div>
       </div>

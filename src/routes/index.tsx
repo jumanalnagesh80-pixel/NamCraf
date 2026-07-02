@@ -7,6 +7,7 @@ import { StatsBand } from "~/components/home/StatsBand";
 import { BrandsMarquee } from "~/components/home/BrandsMarquee";
 import { CategoryChips } from "~/components/home/CategoryChips";
 import { SparkGrid } from "~/components/home/SparkGrid";
+import { GraphicsShowcase } from "~/components/home/GraphicsShowcase";
 import { HowItWorks } from "~/components/home/HowItWorks";
 import { AiTools } from "~/components/home/AiTools";
 import { FeaturesSection } from "~/components/home/FeaturesSection";
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/")({
       path: "/",
       title: undefined,
       description:
-        "Design anything with NAMCRAFT Graphic Studio — a futuristic, AI-powered design platform with 3M+ templates. Search, remix them live, and export in seconds.",
+        "NAMCRAFT is a free-to-use online graphic design tool. Design anything from 3M+ templates — logos, posters, social posts, presentations, résumés and more. Remix them live in your browser and export in seconds. No download, no signup.",
     }),
   }),
   component: Home,
@@ -36,6 +37,7 @@ function Home() {
       <BrandsMarquee />
       <CategoryChips />
       <SparkGrid />
+      <GraphicsShowcase />
       <HowItWorks />
       <AiTools />
       <Marquee />

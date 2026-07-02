@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { toPng, toSvg } from "html-to-image";
+import { toPng, toSvg, toJpeg } from "html-to-image";
 import { seo } from "~/lib/seo";
 import { SiteLayout } from "~/components/SiteLayout";
-import { DesignCanvas } from "~/components/DesignCanvas";
+import { DesignCanvas, BASE_WIDTH } from "~/components/DesignCanvas";
+import { ShapeGraphic } from "~/components/ShapeGraphic";
 import { FavoriteButton } from "~/components/FavoriteButton";
 import { Button } from "~/components/ui/Button";
-import { PALETTES } from "~/lib/palettes";
-import { FONTS } from "~/lib/fonts";
-import { categoryLabel, getTemplate } from "~/lib/templates";
+import { useToast } from "~/components/ui/Toast";
+import { PALETTES, getPalette } from "~/lib/palettes";
+import { fontsByLanguage, getFont } from "~/lib/fonts";
+import { SHAPES, STICKER_SETS, type ShapeType } from "~/lib/graphics";
+import { categoryLabel, getTemplate, ratioToNumber } from "~/lib/templates";
 import {
   defaultDesign,
   loadLocalDesign,
@@ -16,9 +19,18 @@ import {
   loadCloudDesign,
   saveCloudDesign,
   type DesignState,
+  type DesignElement,
 } from "~/lib/designStore";
 import { useAuth } from "~/hooks/useAuth";
 import { cn } from "~/lib/utils";
+
+const SHAPE_COLORS = ["#2E4BC7", "#F26E86", "#F7D94C", "#FBF5E9", "#1E2340", "#3FBFA0", "#FFFFFF"];
+
+function uid() {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `el-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+}
 
 export const Route = createFileRoute("/templates/$id")({
   loader: ({ params }) => {
@@ -59,8 +71,221 @@ function EditorPage() {
     }),
   );
   const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [busy, setBusy] = useState<null | "png" | "svg">(null);
+  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const { toast } = useToast();
+  const [exportFormat, setExportFormat] = useState<"png" | "jpg" | "svg">("png");
+  const [exportScale, setExportScale] = useState(2);
+  const [transparent, setTransparent] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [stickerSet, setStickerSet] = useState(STICKER_SETS[0].id);
+
+  // ---- Undo / redo history ----
+  const pastRef = useRef<DesignState[]>([]);
+  const futureRef = useRef<DesignState[]>([]);
+  const baselineRef = useRef<DesignState>(design);
+  const skipHistoryRef = useRef(false);
+  const [, bumpHistory] = useState(0);
+  const canUndo = pastRef.current.length > 0;
+  const canRedo = futureRef.current.length > 0;
+
+  // Debounced commit: a burst of edits (e.g. a drag) becomes one undo step.
+  useEffect(() => {
+    if (skipHistoryRef.current) {
+      skipHistoryRef.current = false;
+      baselineRef.current = design;
+      return;
+    }
+    const id = setTimeout(() => {
+      if (baselineRef.current !== design) {
+        pastRef.current.push(baselineRef.current);
+        if (pastRef.current.length > 60) pastRef.current.shift();
+        futureRef.current = [];
+        baselineRef.current = design;
+        bumpHistory((n) => n + 1);
+      }
+    }, 400);
+    return () => clearTimeout(id);
+  }, [design]);
+
+  function undo() {
+    if (!pastRef.current.length) return;
+    futureRef.current.push(design);
+    const prev = pastRef.current.pop() as DesignState;
+    baselineRef.current = prev;
+    skipHistoryRef.current = true;
+    setSelectedId(null);
+    setDesign(prev);
+    bumpHistory((n) => n + 1);
+  }
+
+  function redo() {
+    if (!futureRef.current.length) return;
+    pastRef.current.push(design);
+    const next = futureRef.current.pop() as DesignState;
+    baselineRef.current = next;
+    skipHistoryRef.current = true;
+    setSelectedId(null);
+    setDesign(next);
+    bumpHistory((n) => n + 1);
+  }
+
+  function resetHistory(next: DesignState) {
+    pastRef.current = [];
+    futureRef.current = [];
+    baselineRef.current = next;
+    skipHistoryRef.current = true;
+    setDesign(next);
+    bumpHistory((n) => n + 1);
+  }
+
+  const baseHeight = Math.round(BASE_WIDTH / ratioToNumber(template.ratio));
+  const selectedEl = design.elements.find((e) => e.id === selectedId) ?? null;
+
+  const setElements = (updater: (els: DesignElement[]) => DesignElement[]) =>
+    setDesign((d) => ({ ...d, elements: updater(d.elements) }));
+
+  const onElementChange = (id: string, patch: Partial<DesignElement>) =>
+    setElements((els) => els.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+
+  function addShape(shape: ShapeType) {
+    const id = uid();
+    const size = Math.round(BASE_WIDTH * 0.18);
+    setElements((els) => [
+      ...els,
+      {
+        id,
+        kind: "shape",
+        shape,
+        x: BASE_WIDTH / 2 - size / 2,
+        y: baseHeight / 2 - size / 2,
+        size,
+        color: getPalette(design.paletteId).accent,
+        rotation: 0,
+      },
+    ]);
+    setSelectedId(id);
+  }
+
+  function addSticker(emoji: string) {
+    const id = uid();
+    const size = Math.round(BASE_WIDTH * 0.14);
+    setElements((els) => [
+      ...els,
+      { id, kind: "sticker", emoji, x: BASE_WIDTH / 2 - size / 2, y: baseHeight / 2 - size / 2, size, color: "#000", rotation: 0, opacity: 1, flipH: false },
+    ]);
+    setSelectedId(id);
+  }
+
+  function addText() {
+    const id = uid();
+    const size = Math.round(BASE_WIDTH * 0.06);
+    setElements((els) => [
+      ...els,
+      {
+        id,
+        kind: "text",
+        text: "Your text",
+        fontId: design.fontId,
+        x: BASE_WIDTH / 2 - 160,
+        y: baseHeight / 2 - size / 2,
+        size,
+        color: "#FFFFFF",
+        rotation: 0,
+        opacity: 1,
+        flipH: false,
+      },
+    ]);
+    setSelectedId(id);
+  }
+
+  function removeSelected() {
+    if (!selectedId) return;
+    setElements((els) => els.filter((e) => e.id !== selectedId));
+    setSelectedId(null);
+  }
+
+  function reorderSelected(dir: "front" | "back") {
+    if (!selectedId) return;
+    setElements((els) => {
+      const idx = els.findIndex((e) => e.id === selectedId);
+      if (idx < 0) return els;
+      const copy = [...els];
+      const [item] = copy.splice(idx, 1);
+      if (dir === "front") copy.push(item);
+      else copy.unshift(item);
+      return copy;
+    });
+  }
+
+  function duplicateSelected() {
+    if (!selectedId) return;
+    const el = design.elements.find((e) => e.id === selectedId);
+    if (!el) return;
+    const id = uid();
+    setElements((els) => [...els, { ...el, id, x: el.x + 40, y: el.y + 40 }]);
+    setSelectedId(id);
+  }
+
+  // Keyboard shortcuts for the selected element: Esc = deselect,
+  // Delete/Backspace = remove, arrows = nudge (Shift = larger step).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const t = e.target as HTMLElement | null;
+      const typing =
+        !!t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          t.tagName === "SELECT" ||
+          t.isContentEditable);
+      if (typing) return;
+
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        redo();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === "d") {
+        e.preventDefault();
+        duplicateSelected();
+        return;
+      }
+
+      if (!selectedId) return;
+
+      if (e.key === "Escape") return setSelectedId(null);
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        return removeSelected();
+      }
+      const el = design.elements.find((x) => x.id === selectedId);
+      if (!el) return;
+      const step = e.shiftKey ? 40 : 10;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        onElementChange(selectedId, { x: el.x - step });
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        onElementChange(selectedId, { x: el.x + step });
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        onElementChange(selectedId, { y: el.y - step });
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        onElementChange(selectedId, { y: el.y + step });
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [design, selectedId]);
 
   // Restore a previously saved design (cloud when signed in, else local).
   useEffect(() => {
@@ -69,12 +294,13 @@ function EditorPage() {
       let saved: DesignState | null = null;
       if (user) saved = await loadCloudDesign(user.id, template.id);
       if (!saved) saved = loadLocalDesign(template.id);
-      if (saved && active) setDesign(saved);
+      if (saved && active) resetHistory(saved);
     }
     void restore();
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, template.id]);
 
   const update = <K extends keyof DesignState>(key: K, value: DesignState[K]) =>
@@ -95,20 +321,33 @@ function EditorPage() {
         const ok = await saveCloudDesign(user.id, template.id, design);
         setSaveState(ok ? "saved" : "error");
         setMessage(ok ? "Saved to your cloud — synced across devices." : "Could not save to cloud.");
+        toast(
+          ok ? "Saved to your cloud — synced across devices." : "Could not save to cloud.",
+          ok ? "success" : "error",
+        );
       } else {
         saveLocalDesign(template.id, design);
         setSaveState("saved");
-        setMessage(
-          cloudEnabled
-            ? "Saved on this device. Sign in to sync everywhere."
-            : "Saved on this device.",
-        );
+        const msg = cloudEnabled
+          ? "Saved on this device. Sign in to sync everywhere."
+          : "Saved on this device.";
+        setMessage(msg);
+        toast(msg, "success");
       }
     } catch {
       setSaveState("error");
       setMessage("Something went wrong while saving.");
+      toast("Something went wrong while saving.", "error");
     }
     setTimeout(() => setSaveState("idle"), 2500);
+  }
+
+  // Clear the selection ring before rasterizing so it isn't captured.
+  async function deselectForCapture() {
+    setSelectedId(null);
+    await new Promise((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => r(null))),
+    );
   }
 
   function fileName(ext: string) {
@@ -120,28 +359,49 @@ function EditorPage() {
     return `namcraft-${slug || template.id}.${ext}`;
   }
 
-  async function download(kind: "png" | "svg") {
+  async function download() {
     if (!exportRef.current) return;
-    setBusy(kind);
+    setBusy(true);
+    await deselectForCapture();
     try {
-      const options = { pixelRatio: 2, cacheBust: true, backgroundColor: "#ffffff" };
+      const node = exportRef.current;
+      const opts: Record<string, unknown> = { cacheBust: true };
+      if (exportFormat === "svg") {
+        opts.pixelRatio = 1;
+      } else {
+        opts.pixelRatio = exportScale;
+      }
+      if (exportFormat === "png") {
+        if (!transparent) opts.backgroundColor = "#ffffff";
+      } else if (exportFormat === "jpg") {
+        opts.backgroundColor = "#ffffff";
+        opts.quality = 0.95;
+      }
       const dataUrl =
-        kind === "png"
-          ? await toPng(exportRef.current, options)
-          : await toSvg(exportRef.current, options);
+        exportFormat === "png"
+          ? await toPng(node, opts)
+          : exportFormat === "jpg"
+            ? await toJpeg(node, opts)
+            : await toSvg(node, opts);
       const link = document.createElement("a");
-      link.download = fileName(kind);
+      link.download = fileName(exportFormat);
       link.href = dataUrl;
       link.click();
+      toast(
+        `Downloaded ${exportFormat.toUpperCase()}${exportFormat !== "svg" ? ` @ ${exportScale}×` : ""}`,
+        "success",
+      );
     } catch {
       setMessage("Export failed — please try again.");
+      toast("Export failed — please try again.", "error");
     } finally {
-      setBusy(null);
+      setBusy(false);
     }
   }
 
   async function handlePrint() {
     if (!exportRef.current) return;
+    await deselectForCapture();
     try {
       const dataUrl = await toPng(exportRef.current, { pixelRatio: 2, cacheBust: true });
       const w = window.open("", "_blank");
@@ -157,6 +417,7 @@ function EditorPage() {
 
   async function handleShare() {
     if (!exportRef.current) return;
+    await deselectForCapture();
     try {
       const dataUrl = await toPng(exportRef.current, { pixelRatio: 2, cacheBust: true });
       const blob = await (await fetch(dataUrl)).blob();
@@ -197,6 +458,28 @@ function EditorPage() {
             <h1 className="font-display mt-1 text-3xl font-black">{template.title}</h1>
           </div>
           <div className="flex items-center gap-2">
+            <div className="glass mr-1 flex items-center gap-1 rounded-full p-1">
+              <button
+                type="button"
+                onClick={undo}
+                disabled={!canUndo}
+                aria-label="Undo"
+                title="Undo (Ctrl/Cmd+Z)"
+                className="hover:bg-muted flex h-8 w-8 items-center justify-center rounded-full text-lg transition disabled:opacity-40"
+              >
+                ↶
+              </button>
+              <button
+                type="button"
+                onClick={redo}
+                disabled={!canRedo}
+                aria-label="Redo"
+                title="Redo (Ctrl/Cmd+Shift+Z)"
+                className="hover:bg-muted flex h-8 w-8 items-center justify-center rounded-full text-lg transition disabled:opacity-40"
+              >
+                ↷
+              </button>
+            </div>
             <FavoriteButton templateId={template.id} size={22} />
             <Button variant="outline" size="sm" onClick={handleShare}>
               Share
@@ -217,17 +500,59 @@ function EditorPage() {
                   ratio={template.ratio}
                   design={design}
                   eyebrow={categoryLabel(template.category)}
+                  editable
+                  selectedId={selectedId}
+                  onSelectElement={setSelectedId}
+                  onElementChange={onElementChange}
                 />
               </div>
+              {design.elements.length > 0 && (
+                <p className="text-muted-foreground mt-3 text-center text-xs">
+                  Tip: tap a shape or sticker to select it, then drag to move it.
+                </p>
+              )}
             </div>
 
-            {/* Export bar */}
+            {/* Export options */}
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Button onClick={() => download("png")} disabled={busy !== null}>
-                {busy === "png" ? "Exporting…" : "⬇ Download PNG"}
-              </Button>
-              <Button variant="secondary" onClick={() => download("svg")} disabled={busy !== null}>
-                {busy === "svg" ? "Exporting…" : "⬇ Download SVG"}
+              <select
+                value={exportFormat}
+                onChange={(e) => setExportFormat(e.target.value as "png" | "jpg" | "svg")}
+                className="border-border bg-card rounded-full border px-3 py-2 text-sm font-medium outline-none"
+                aria-label="Export format"
+              >
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+                <option value="svg">SVG (vector)</option>
+              </select>
+              <select
+                value={exportScale}
+                onChange={(e) => setExportScale(Number(e.target.value))}
+                disabled={exportFormat === "svg"}
+                className="border-border bg-card rounded-full border px-3 py-2 text-sm font-medium outline-none disabled:opacity-50"
+                aria-label="Export scale"
+              >
+                <option value={1}>1× · 1080px</option>
+                <option value={2}>2× · 2160px</option>
+                <option value={3}>3× · 3240px</option>
+              </select>
+              {exportFormat === "png" && (
+                <label className="border-border flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    checked={transparent}
+                    onChange={(e) => setTransparent(e.target.checked)}
+                    className="accent-primary"
+                  />
+                  Transparent
+                </label>
+              )}
+              <Button
+                onClick={download}
+                disabled={busy}
+                className="bg-gradient-neon glow animate-gradient-move"
+              >
+                {busy ? "Exporting…" : "⬇ Download"}
               </Button>
               <Button variant="outline" onClick={handleSave} disabled={saveState === "saving"}>
                 {saveState === "saving"
@@ -321,27 +646,274 @@ function EditorPage() {
               </div>
             </Panel>
 
-            <Panel title="Font">
-              <div className="grid gap-2">
-                {FONTS.map((f) => (
+            <Panel title="Font · all languages">
+              <select
+                value={design.fontId}
+                onChange={(e) => update("fontId", e.target.value)}
+                className="editor-input"
+                aria-label="Font family"
+              >
+                {fontsByLanguage().map((group) => (
+                  <optgroup key={group.lang} label={group.lang}>
+                    {group.fonts.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              <p
+                className="border-border mt-3 truncate rounded-xl border px-3 py-3 text-center text-xl"
+                style={{ fontFamily: getFont(design.fontId).stack }}
+              >
+                {design.headline || "Aa · अ · ع · あ · 한"}
+              </p>
+            </Panel>
+
+            <Panel title="Elements · text, shapes & stickers">
+              <Button variant="outline" className="glass mb-4 w-full" onClick={addText}>
+                ➕ Add a text box
+              </Button>
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Shapes
+              </div>
+              <div className="grid grid-cols-6 gap-2">
+                {SHAPES.map((s) => (
                   <button
-                    key={f.id}
+                    key={s.id}
                     type="button"
-                    onClick={() => update("fontId", f.id)}
-                    aria-pressed={design.fontId === f.id}
-                    className={cn(
-                      "rounded-xl border px-3 py-2 text-left text-sm transition",
-                      design.fontId === f.id
-                        ? "border-primary bg-muted"
-                        : "border-border hover:bg-muted",
-                    )}
-                    style={{ fontFamily: f.stack }}
+                    onClick={() => addShape(s.id)}
+                    title={s.name}
+                    aria-label={`Add ${s.name}`}
+                    className="border-border hover:bg-muted hover:border-primary flex aspect-square items-center justify-center rounded-lg border p-1.5 transition"
                   >
-                    {f.name}
+                    <ShapeGraphic type={s.id} color="currentColor" size={26} />
                   </button>
                 ))}
               </div>
+
+              <div className="mt-5 mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Stickers
+              </div>
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {STICKER_SETS.map((set) => (
+                  <button
+                    key={set.id}
+                    type="button"
+                    onClick={() => setStickerSet(set.id)}
+                    className={cn(
+                      "rounded-full border px-2.5 py-1 text-xs font-medium transition",
+                      stickerSet === set.id
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border hover:bg-muted",
+                    )}
+                  >
+                    {set.label}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-6 gap-1.5">
+                {(STICKER_SETS.find((s) => s.id === stickerSet) ?? STICKER_SETS[0]).emoji.map(
+                  (emoji, i) => (
+                    <button
+                      key={`${emoji}-${i}`}
+                      type="button"
+                      onClick={() => addSticker(emoji)}
+                      className="hover:bg-muted rounded-lg py-1.5 text-2xl transition"
+                      aria-label="Add sticker"
+                    >
+                      {emoji}
+                    </button>
+                  ),
+                )}
+              </div>
             </Panel>
+
+            {selectedEl && (
+              <Panel title={`Selected ${selectedEl.kind}`}>
+                {selectedEl.kind === "text" && (
+                  <>
+                    <Field label="Text">
+                      <textarea
+                        value={selectedEl.text ?? ""}
+                        onChange={(e) => onElementChange(selectedEl.id, { text: e.target.value })}
+                        rows={2}
+                        className="editor-input resize-none"
+                        placeholder="Type your text"
+                      />
+                    </Field>
+                    <Field label="Font">
+                      <select
+                        value={selectedEl.fontId ?? design.fontId}
+                        onChange={(e) => onElementChange(selectedEl.id, { fontId: e.target.value })}
+                        className="editor-input"
+                      >
+                        {fontsByLanguage().map((group) => (
+                          <optgroup key={group.lang} label={group.lang}>
+                            {group.fonts.map((f) => (
+                              <option key={f.id} value={f.id}>
+                                {f.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </Field>
+                  </>
+                )}
+
+                <Field label={`Size — ${Math.round(selectedEl.size)}px`}>
+                  <input
+                    type="range"
+                    min={selectedEl.kind === "text" ? 20 : 40}
+                    max={640}
+                    value={selectedEl.size}
+                    onChange={(e) => onElementChange(selectedEl.id, { size: Number(e.target.value) })}
+                    className="accent-primary w-full"
+                  />
+                </Field>
+                <Field label={`Rotation — ${Math.round(selectedEl.rotation)}°`}>
+                  <input
+                    type="range"
+                    min={0}
+                    max={360}
+                    value={selectedEl.rotation}
+                    onChange={(e) =>
+                      onElementChange(selectedEl.id, { rotation: Number(e.target.value) })
+                    }
+                    className="accent-primary w-full"
+                  />
+                </Field>
+                <Field label={`Opacity — ${Math.round((selectedEl.opacity ?? 1) * 100)}%`}>
+                  <input
+                    type="range"
+                    min={10}
+                    max={100}
+                    value={Math.round((selectedEl.opacity ?? 1) * 100)}
+                    onChange={(e) =>
+                      onElementChange(selectedEl.id, { opacity: Number(e.target.value) / 100 })
+                    }
+                    className="accent-primary w-full"
+                  />
+                </Field>
+
+                {(selectedEl.kind === "shape" || selectedEl.kind === "text") && (
+                  <div>
+                    <span className="text-muted-foreground mb-1.5 block text-sm font-medium">
+                      Color
+                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {SHAPE_COLORS.map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => onElementChange(selectedEl.id, { color: c })}
+                          aria-label={`Color ${c}`}
+                          className={cn(
+                            "h-7 w-7 rounded-full border-2 transition",
+                            selectedEl.color === c ? "border-primary scale-110" : "border-border",
+                          )}
+                          style={{ background: c }}
+                        />
+                      ))}
+                      <input
+                        type="color"
+                        value={selectedEl.color}
+                        onChange={(e) => onElementChange(selectedEl.id, { color: e.target.value })}
+                        className="h-7 w-9 cursor-pointer rounded border-0 bg-transparent p-0"
+                        aria-label="Custom color"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <label className="flex items-center justify-between gap-3 pt-1 text-sm font-medium">
+                  <span>Flip horizontally</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={Boolean(selectedEl.flipH)}
+                    onClick={() => onElementChange(selectedEl.id, { flipH: !selectedEl.flipH })}
+                    className={cn(
+                      "relative h-6 w-11 rounded-full transition",
+                      selectedEl.flipH ? "bg-primary" : "bg-border",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "bg-card absolute top-0.5 h-5 w-5 rounded-full shadow transition-all",
+                        selectedEl.flipH ? "left-[1.4rem]" : "left-0.5",
+                      )}
+                    />
+                  </button>
+                </label>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Button size="sm" variant="outline" onClick={duplicateSelected}>
+                    ⧉ Duplicate
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => reorderSelected("front")}>
+                    ⬆ Front
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => reorderSelected("back")}>
+                    ⬇ Back
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={removeSelected}>
+                    🗑 Delete
+                  </Button>
+                </div>
+                <p className="text-muted-foreground pt-1 text-xs">
+                  Shortcuts: drag to move · arrow keys to nudge · Delete to remove · Esc to deselect.
+                </p>
+              </Panel>
+            )}
+
+            {design.elements.length > 0 && (
+              <Panel title={`Layers · ${design.elements.length}`}>
+                <div className="space-y-1.5">
+                  {[...design.elements].reverse().map((el) => (
+                    <div
+                      key={el.id}
+                      className={cn(
+                        "flex items-center gap-2 rounded-xl border px-2.5 py-2 text-sm transition",
+                        selectedId === el.id
+                          ? "border-primary bg-muted"
+                          : "border-border hover:bg-muted",
+                      )}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setSelectedId(el.id)}
+                        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                      >
+                        <span className="text-base" aria-hidden="true">
+                          {el.kind === "sticker" ? el.emoji : el.kind === "text" ? "🅣" : "◆"}
+                        </span>
+                        <span className="truncate">
+                          {el.kind === "text"
+                            ? el.text || "Text"
+                            : el.kind === "sticker"
+                              ? "Sticker"
+                              : (el.shape ?? "Shape")}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setElements((els) => els.filter((x) => x.id !== el.id));
+                          if (selectedId === el.id) setSelectedId(null);
+                        }}
+                        aria-label="Delete layer"
+                        className="text-muted-foreground hover:text-destructive px-1"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
+            )}
 
             <Panel title="Background image">
               <label className="border-border hover:bg-muted flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-6 text-sm font-medium transition">
