@@ -47,6 +47,22 @@ export function categoryLabel(id: string): string {
   return CATEGORIES.find((c) => c.id === id)?.label ?? id;
 }
 
+export function getCategory(id: string): TemplateCategory | undefined {
+  return CATEGORIES.find((c) => c.id === id);
+}
+
+/** Short marketing blurb per category, used on category landing pages. */
+export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  logos: "Craft a memorable mark. Monograms, badges and wordmarks that scale from favicon to billboard.",
+  posters: "Stop the scroll and fill the wall. Bold, high-impact posters for every event and campaign.",
+  social: "Show up on every feed. On-brand posts, quotes and announcements sized for social.",
+  presentations: "Pitch with polish. Title slides, dividers and stat highlights that command the room.",
+  "business-cards": "Make the handshake count. Clean, confident cards that put your name front and centre.",
+  flyers: "Spread the word. Eye-catching flyers for openings, workshops, markets and gigs.",
+  instagram: "Own the grid. Stories, carousels and reel covers designed to stop thumbs.",
+  resumes: "Get hired in style. Modern, recruiter-friendly résumés that read as clearly as they look.",
+};
+
 export function ratioToNumber(ratio: AspectRatio): number {
   const [w, h] = ratio.split(":").map(Number);
   return w / h;
@@ -135,7 +151,7 @@ export const CURATED_TEMPLATES = TEMPLATES;
 export const TOTAL_TEMPLATE_COUNT = 3_000_000;
 
 /** How many procedural templates to keep in memory for browsing/filtering. */
-export const GEN_POOL_SIZE = 2400;
+export const GEN_POOL_SIZE = 6000;
 
 const PALETTE_IDS = ["stamp", "sunrise", "cream", "berry", "blossom", "lemon", "ink", "mint"];
 const FONT_IDS = ["fraunces", "poppins", "playfair", "georgia", "mono", "system"];

@@ -24,8 +24,8 @@ export function CategoryChips() {
         {CATEGORIES.map((cat) => (
           <Link
             key={cat.id}
-            to="/templates"
-            search={{ category: cat.id }}
+            to="/category/$slug"
+            params={{ slug: cat.id }}
             className="group glass flex flex-col items-center gap-2 rounded-2xl p-4 text-center transition hover:-translate-y-1 hover:glow"
           >
             <span className="bg-gradient-neon animate-gradient-move flex h-12 w-12 items-center justify-center rounded-xl text-2xl">
