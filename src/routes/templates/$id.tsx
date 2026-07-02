@@ -108,7 +108,29 @@ function EditorPage() {
     const size = Math.round(BASE_WIDTH * 0.14);
     setElements((els) => [
       ...els,
-      { id, kind: "sticker", emoji, x: BASE_WIDTH / 2 - size / 2, y: baseHeight / 2 - size / 2, size, color: "#000", rotation: 0 },
+      { id, kind: "sticker", emoji, x: BASE_WIDTH / 2 - size / 2, y: baseHeight / 2 - size / 2, size, color: "#000", rotation: 0, opacity: 1, flipH: false },
+    ]);
+    setSelectedId(id);
+  }
+
+  function addText() {
+    const id = uid();
+    const size = Math.round(BASE_WIDTH * 0.06);
+    setElements((els) => [
+      ...els,
+      {
+        id,
+        kind: "text",
+        text: "Your text",
+        fontId: design.fontId,
+        x: BASE_WIDTH / 2 - 160,
+        y: baseHeight / 2 - size / 2,
+        size,
+        color: "#FFFFFF",
+        rotation: 0,
+        opacity: 1,
+        flipH: false,
+      },
     ]);
     setSelectedId(id);
   }
@@ -131,6 +153,46 @@ function EditorPage() {
       return copy;
     });
   }
+
+  // Keyboard shortcuts for the selected element: Esc = deselect,
+  // Delete/Backspace = remove, arrows = nudge (Shift = larger step).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const t = e.target as HTMLElement | null;
+      const typing =
+        !!t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          t.tagName === "SELECT" ||
+          t.isContentEditable);
+      if (typing || !selectedId) return;
+
+      if (e.key === "Escape") return setSelectedId(null);
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        return removeSelected();
+      }
+      const el = design.elements.find((x) => x.id === selectedId);
+      if (!el) return;
+      const step = e.shiftKey ? 40 : 10;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        onElementChange(selectedId, { x: el.x - step });
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        onElementChange(selectedId, { x: el.x + step });
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        onElementChange(selectedId, { y: el.y - step });
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        onElementChange(selectedId, { y: el.y + step });
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, design.elements]);
 
   // Restore a previously saved design (cloud when signed in, else local).
   useEffect(() => {
@@ -436,7 +498,10 @@ function EditorPage() {
               </p>
             </Panel>
 
-            <Panel title="Elements · shapes & stickers">
+            <Panel title="Elements · text, shapes & stickers">
+              <Button variant="outline" className="glass mb-4 w-full" onClick={addText}>
+                ➕ Add a text box
+              </Button>
               <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Shapes
               </div>
@@ -493,11 +558,42 @@ function EditorPage() {
             </Panel>
 
             {selectedEl && (
-              <Panel title="Selected element">
+              <Panel title={`Selected ${selectedEl.kind}`}>
+                {selectedEl.kind === "text" && (
+                  <>
+                    <Field label="Text">
+                      <textarea
+                        value={selectedEl.text ?? ""}
+                        onChange={(e) => onElementChange(selectedEl.id, { text: e.target.value })}
+                        rows={2}
+                        className="editor-input resize-none"
+                        placeholder="Type your text"
+                      />
+                    </Field>
+                    <Field label="Font">
+                      <select
+                        value={selectedEl.fontId ?? design.fontId}
+                        onChange={(e) => onElementChange(selectedEl.id, { fontId: e.target.value })}
+                        className="editor-input"
+                      >
+                        {fontsByLanguage().map((group) => (
+                          <optgroup key={group.lang} label={group.lang}>
+                            {group.fonts.map((f) => (
+                              <option key={f.id} value={f.id}>
+                                {f.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </Field>
+                  </>
+                )}
+
                 <Field label={`Size — ${Math.round(selectedEl.size)}px`}>
                   <input
                     type="range"
-                    min={40}
+                    min={selectedEl.kind === "text" ? 20 : 40}
                     max={640}
                     value={selectedEl.size}
                     onChange={(e) => onElementChange(selectedEl.id, { size: Number(e.target.value) })}
@@ -516,8 +612,20 @@ function EditorPage() {
                     className="accent-primary w-full"
                   />
                 </Field>
+                <Field label={`Opacity — ${Math.round((selectedEl.opacity ?? 1) * 100)}%`}>
+                  <input
+                    type="range"
+                    min={10}
+                    max={100}
+                    value={Math.round((selectedEl.opacity ?? 1) * 100)}
+                    onChange={(e) =>
+                      onElementChange(selectedEl.id, { opacity: Number(e.target.value) / 100 })
+                    }
+                    className="accent-primary w-full"
+                  />
+                </Field>
 
-                {selectedEl.kind === "shape" && (
+                {(selectedEl.kind === "shape" || selectedEl.kind === "text") && (
                   <div>
                     <span className="text-muted-foreground mb-1.5 block text-sm font-medium">
                       Color
@@ -547,6 +655,27 @@ function EditorPage() {
                   </div>
                 )}
 
+                <label className="flex items-center justify-between gap-3 pt-1 text-sm font-medium">
+                  <span>Flip horizontally</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={Boolean(selectedEl.flipH)}
+                    onClick={() => onElementChange(selectedEl.id, { flipH: !selectedEl.flipH })}
+                    className={cn(
+                      "relative h-6 w-11 rounded-full transition",
+                      selectedEl.flipH ? "bg-primary" : "bg-border",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "bg-card absolute top-0.5 h-5 w-5 rounded-full shadow transition-all",
+                        selectedEl.flipH ? "left-[1.4rem]" : "left-0.5",
+                      )}
+                    />
+                  </button>
+                </label>
+
                 <div className="flex flex-wrap gap-2 pt-1">
                   <Button size="sm" variant="outline" onClick={() => reorderSelected("front")}>
                     ⬆ Front
@@ -558,6 +687,9 @@ function EditorPage() {
                     🗑 Delete
                   </Button>
                 </div>
+                <p className="text-muted-foreground pt-1 text-xs">
+                  Shortcuts: drag to move · arrow keys to nudge · Delete to remove · Esc to deselect.
+                </p>
               </Panel>
             )}
 

@@ -12,14 +12,22 @@ import type { ShapeType } from "./graphics";
  *  the design's base coordinate space (see BASE_WIDTH in DesignCanvas). */
 export interface DesignElement {
   id: string;
-  kind: "shape" | "sticker";
+  kind: "shape" | "sticker" | "text";
   shape?: ShapeType;
   emoji?: string;
+  /** text content when kind === "text" */
+  text?: string;
+  /** font id for text elements (falls back to the design font) */
+  fontId?: string;
   x: number;
   y: number;
   size: number;
   color: string;
   rotation: number;
+  /** 0..1, defaults to 1 */
+  opacity?: number;
+  /** mirror horizontally */
+  flipH?: boolean;
 }
 
 export interface DesignState {

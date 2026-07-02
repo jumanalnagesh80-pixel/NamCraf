@@ -240,6 +240,8 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
             >
               {elements.map((el) => {
                 const selected = editable && selectedId === el.id;
+                const isText = el.kind === "text";
+                const flip = el.flipH ? -1 : 1;
                 return (
                   <div
                     key={el.id}
@@ -248,9 +250,11 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
                       position: "absolute",
                       left: el.x,
                       top: el.y,
-                      width: el.size,
-                      height: el.size,
-                      transform: `rotate(${el.rotation}deg)`,
+                      width: isText ? "max-content" : el.size,
+                      height: isText ? "auto" : el.size,
+                      maxWidth: isText ? BASE_WIDTH * 0.9 : undefined,
+                      transform: `rotate(${el.rotation}deg) scaleX(${flip})`,
+                      opacity: el.opacity ?? 1,
                       cursor: editable ? "move" : "default",
                       outline: selected ? "4px solid #ffffff" : "none",
                       outlineOffset: 6,
@@ -263,6 +267,20 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
                   >
                     {el.kind === "shape" && el.shape ? (
                       <ShapeGraphic type={el.shape} color={el.color} size={el.size} />
+                    ) : el.kind === "text" ? (
+                      <span
+                        style={{
+                          fontSize: el.size,
+                          lineHeight: 1.1,
+                          fontWeight: 800,
+                          color: el.color,
+                          fontFamily: getFont(el.fontId ?? design.fontId).stack,
+                          whiteSpace: "pre-wrap",
+                          textAlign: "center",
+                        }}
+                      >
+                        {el.text || "Text"}
+                      </span>
                     ) : (
                       <span style={{ fontSize: el.size, lineHeight: 1 }}>{el.emoji}</span>
                     )}
