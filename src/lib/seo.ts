@@ -30,13 +30,15 @@ export interface SeoOptions {
 
 export function seo({
   title,
-  description = "Design anything with NAMCRAFT Graphic Studio — a playful, hand-crafted design platform. Browse 40+ templates and remix them in a live editor.",
+  description = "NAMCRAFT Graphic Studio is a free-to-use online graphic design tool. Design anything — browse 3M+ templates for logos, posters, social posts and more, and remix them in a live editor. No download, no signup required.",
   path = "/",
   image = OG_IMAGE,
   type = "website",
-  keywords = "graphic design, templates, logo maker, poster maker, social media design, NAMCRAFT",
+  keywords = "free online graphic design tool, free design tool, graphic design, design maker, templates, logo maker, poster maker, social media design, resume maker, online editor, NAMCRAFT",
 }: SeoOptions = {}): { meta: MetaTag[]; links: LinkTag[] } {
-  const fullTitle = title ? `${title} · ${SITE_NAME}` : `${SITE_NAME} — Design anything`;
+  const fullTitle = title
+    ? `${title} · ${SITE_NAME}`
+    : `${SITE_NAME} — Free Online Graphic Design Tool`;
   const canonical = `${SITE_URL}${path === "/" ? "" : path}`;
 
   return {

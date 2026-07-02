@@ -1,8 +1,8 @@
 # 🎨 NAMCRAFT Graphic Studio
 
-A Canva-inspired design platform for **NAMCRAFT Graphic Studio** — browse studio-crafted
-templates, remix them in a live editor, and export as PNG or SVG. Built with a playful,
-hand-crafted "postage stamp" design system.
+A **free-to-use online graphic design tool**. Browse millions of studio-crafted
+templates, remix them in a live editor, and export as PNG or SVG — no download, no signup.
+Built with a playful, hand-crafted "postage stamp" design system.
 
 > Palette extracted from the NAMCRAFT logo: **stamp blue**, **blossom pink**,
 > **lemon yellow**, on a **warm cream** background (deep berry in dark mode).

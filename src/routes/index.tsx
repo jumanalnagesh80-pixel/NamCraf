@@ -22,7 +22,7 @@ export const Route = createFileRoute("/")({
       path: "/",
       title: undefined,
       description:
-        "Design anything with NAMCRAFT Graphic Studio — a futuristic, AI-powered design platform with 3M+ templates. Search, remix them live, and export in seconds.",
+        "NAMCRAFT is a free-to-use online graphic design tool. Design anything from 3M+ templates — logos, posters, social posts, presentations, résumés and more. Remix them live in your browser and export in seconds. No download, no signup.",
     }),
   }),
   component: Home,

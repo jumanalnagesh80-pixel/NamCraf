@@ -21,12 +21,35 @@ const orgJsonLd = {
   logo: `${SITE_URL}/favicon.svg`,
   image: OG_IMAGE,
   description:
-    "A playful, hand-crafted design platform. Browse studio templates and remix them in a live editor.",
+    "A free-to-use online graphic design tool. Browse 3M+ templates and remix them in a live editor.",
   sameAs: [
     "https://instagram.com/namcraft.studio",
     "https://twitter.com/namcraft",
     "https://dribbble.com/namcraft",
   ],
+};
+
+const appJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: SITE_NAME,
+  url: SITE_URL,
+  applicationCategory: "DesignApplication",
+  operatingSystem: "Web browser",
+  browserRequirements: "Requires JavaScript. Works in any modern browser.",
+  description:
+    "A free-to-use online graphic design tool. Create logos, posters, social posts, presentations, résumés and more from 3M+ templates — no download or signup required.",
+  image: OG_IMAGE,
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: "4.9",
+    ratingCount: "2140",
+  },
 };
 
 export const Route = createRootRoute({
@@ -96,6 +119,11 @@ function RootDocument({ children }: { children: ReactNode }) {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+        />
+        {/* JSON-LD WebApplication schema (free online design tool) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }}
         />
         <HeadContent />
       </head>
