@@ -66,6 +66,7 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
 
     const palette = getPalette(design.paletteId);
     const font = getFont(design.fontId);
+    const bodyFont = getFont(design.bodyFontId ?? design.fontId);
     const textColor = design.darkText ? palette.textDark : palette.textLight;
     const taglineSize = Math.max(18, Math.round(design.headlineSize * 0.34));
     const pad = Math.round(BASE_WIDTH * 0.067);
@@ -241,6 +242,7 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
                 <p
                   style={{
                     fontSize: taglineSize,
+                    fontFamily: bodyFont.stack,
                     fontWeight: 500,
                     lineHeight: 1.3,
                     margin: 0,
@@ -262,7 +264,7 @@ export const DesignCanvas = forwardRef<HTMLDivElement, DesignCanvasProps>(
                     background: palette.accent,
                   }}
                 />
-                <span style={{ fontSize: 22, fontWeight: 600, opacity: 0.85 }}>
+                <span style={{ fontSize: 22, fontWeight: 600, opacity: 0.85, fontFamily: bodyFont.stack }}>
                   namcraft.studio
                 </span>
               </div>

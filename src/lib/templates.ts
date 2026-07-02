@@ -1,5 +1,7 @@
-import { DEFAULT_FONT_ID } from "./fonts";
+import { DEFAULT_BODY_FONT_ID, DEFAULT_FONT_ID } from "./fonts";
 import { DEFAULT_PALETTE_ID } from "./palettes";
+import { pairForCategoryIndex, defaultPairForCategory } from "./fontPairings";
+import { archetypesForCategory, ALIGNMENT_VARIANTS } from "./layoutSchema";
 
 export type AspectRatio = "1:1" | "3:4" | "4:5" | "16:9";
 
@@ -44,7 +46,15 @@ export interface Template {
   headline: string;
   tagline: string;
   paletteId: string;
-  fontId: string;
+  fontId: string; // heading font id
+  /** body / supporting-copy font id (from the curated font pairing) */
+  bodyFontId?: string;
+  /** id of the curated font pair this template was built from */
+  pairId?: string;
+  /** parametric layout archetype id (see layoutSchema.ts) */
+  layoutId?: string;
+  /** alignment micro-variation id */
+  align?: string;
   darkText: boolean;
   popularity: number; // 0-100 for "popular" sort
   createdAt: string; // ISO date for "newest" sort
@@ -170,7 +180,6 @@ export const TOTAL_TEMPLATE_COUNT = 4_000_000;
 export const GEN_POOL_SIZE = 6000;
 
 const PALETTE_IDS = ["stamp", "sunrise", "cream", "berry", "blossom", "lemon", "ink", "mint"];
-const FONT_IDS = ["fraunces", "poppins", "playfair", "georgia", "mono", "system"];
 const ALL_RATIOS: AspectRatio[] = ["1:1", "3:4", "4:5", "16:9"];
 const CATEGORY_IDS = CATEGORIES.map((c) => c.id);
 
@@ -284,7 +293,14 @@ export function generateTemplate(index: number): Template {
       ? pick(["3:4", "4:5"] as AspectRatio[], hash(index, 11))
       : pick(ALL_RATIOS, hash(index, 11));
   const paletteId = pick(PALETTE_IDS, hash(index, 13));
-  const fontId = pick(FONT_IDS, hash(index, 17));
+  // Font pairing: always a *designed* heading + body combo for this category.
+  const pair = pairForCategoryIndex(category, hash(index, 17));
+  const fontId = pair.headingFontId;
+  const bodyFontId = pair.bodyFontId;
+  // Parametric layout: pick a category-appropriate archetype + alignment.
+  const archetypes = archetypesForCategory(category);
+  const layoutId = archetypes[hash(index, 29) % archetypes.length].id;
+  const align = ALIGNMENT_VARIANTS[hash(index, 31) % ALIGNMENT_VARIANTS.length].id;
   const darkText = paletteId === "cream" || paletteId === "lemon";
   const { title, headline, tagline, tags } = contentFor(category, index);
 
@@ -302,6 +318,10 @@ export function generateTemplate(index: number): Template {
     tagline,
     paletteId,
     fontId,
+    bodyFontId,
+    pairId: pair.id,
+    layoutId,
+    align,
     darkText,
     popularity: 30 + (hash(index, 23) % 70),
     createdAt,
@@ -341,6 +361,7 @@ export const BLANK_PRESETS: BlankPreset[] = [
 ];
 
 function blankTemplate(preset: BlankPreset): Template {
+  const pair = defaultPairForCategory(preset.category);
   return {
     id: preset.id,
     title: `Blank ${preset.label}`,
@@ -349,7 +370,9 @@ function blankTemplate(preset: BlankPreset): Template {
     headline: "",
     tagline: "",
     paletteId: "cream",
-    fontId: "poppins",
+    fontId: pair.headingFontId,
+    bodyFontId: pair.bodyFontId,
+    pairId: pair.id,
     darkText: true,
     popularity: 0,
     createdAt: "2026-06-01",
@@ -357,9 +380,22 @@ function blankTemplate(preset: BlankPreset): Template {
   };
 }
 
+/** Ensure a template exposes a full font pairing (body font + pair id). Curated
+ *  templates only declare a heading font, so we backfill the category's default
+ *  body font + pair when they're missing — every template stays "designed". */
+function withPairing(t: Template): Template {
+  if (t.bodyFontId && t.pairId) return t;
+  const pair = defaultPairForCategory(t.category);
+  return {
+    ...t,
+    bodyFontId: t.bodyFontId ?? pair.bodyFontId,
+    pairId: t.pairId ?? pair.id,
+  };
+}
+
 export function getTemplate(id: string): Template | undefined {
   const curated = TEMPLATES.find((t) => t.id === id);
-  if (curated) return curated;
+  if (curated) return withPairing(curated);
   const m = GEN_ID_RE.exec(id);
   if (m) return generateTemplate(Number(m[1]));
   if (id.startsWith("blank-")) {
@@ -391,4 +427,5 @@ export function formatLakh(n: number): string {
 export const EDITOR_DEFAULTS = {
   paletteId: DEFAULT_PALETTE_ID,
   fontId: DEFAULT_FONT_ID,
+  bodyFontId: DEFAULT_BODY_FONT_ID,
 };
